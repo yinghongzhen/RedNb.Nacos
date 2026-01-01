@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>RedNb.Nacos.AspNetCore</PackageId>
+    <Title>RedNb Nacos ASP.NET Core Integration</Title>
+    <Description>RedNb Nacos SDK ASP.NET Core 集成 - 服务注册、健康检查、Host 扩展</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RedNb.Nacos\RedNb.Nacos.csproj" />
+  </ItemGroup>
+
+</Project>

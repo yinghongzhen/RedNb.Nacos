@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>RedNb.Nacos.Sample.WebApi</RootNamespace>
+    <AssemblyName>RedNb.Nacos.Sample.WebApi</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RedNb.Nacos.AspNetCore\RedNb.Nacos.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\RedNb.Nacos.Configuration\RedNb.Nacos.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>

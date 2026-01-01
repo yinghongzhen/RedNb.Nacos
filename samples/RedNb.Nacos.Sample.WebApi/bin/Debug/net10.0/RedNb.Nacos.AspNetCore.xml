@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RedNb.Nacos.AspNetCore</name>
+    </assembly>
+    <members>
+        <member name="T:RedNb.Nacos.AspNetCore.Hosting.HostBuilderExtensions">
+            <summary>
+            HostBuilder 扩展方法
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.Hosting.HostBuilderExtensions.UseRedNbNacos(Microsoft.Extensions.Hosting.IHostBuilder,System.String)">
+            <summary>
+            使用 Nacos 服务注册
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.Hosting.HostBuilderExtensions.UseRedNbNacos(Microsoft.Extensions.Hosting.IHostBuilder,System.Action{RedNb.Nacos.Common.Options.NacosOptions})">
+            <summary>
+            使用 Nacos 服务注册（Action 配置）
+            </summary>
+        </member>
+        <member name="T:RedNb.Nacos.AspNetCore.Hosting.WebApplicationBuilderExtensions">
+            <summary>
+            WebApplicationBuilder 扩展方法
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.Hosting.WebApplicationBuilderExtensions.AddRedNbNacos(Microsoft.AspNetCore.Builder.WebApplicationBuilder,System.String)">
+            <summary>
+            添加 Nacos（WebApplicationBuilder 扩展）
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.Hosting.WebApplicationBuilderExtensions.AddRedNbNacos(Microsoft.AspNetCore.Builder.WebApplicationBuilder,System.Action{RedNb.Nacos.Common.Options.NacosOptions})">
+            <summary>
+            添加 Nacos（Action 配置）
+            </summary>
+        </member>
+        <member name="T:RedNb.Nacos.AspNetCore.Hosting.NacosHostedService">
+            <summary>
+            Nacos 后台服务（服务注册和心跳维护）
+            </summary>
+        </member>
+        <member name="T:RedNb.Nacos.AspNetCore.ServiceCollectionExtensions">
+            <summary>
+            ASP.NET Core 依赖注入扩展
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.ServiceCollectionExtensions.AddRedNbNacosAspNetCore(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration,System.String)">
+            <summary>
+            添加 Nacos 服务（含服务注册）
+            </summary>
+        </member>
+        <member name="M:RedNb.Nacos.AspNetCore.ServiceCollectionExtensions.AddRedNbNacosAspNetCore(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{RedNb.Nacos.Common.Options.NacosOptions})">
+            <summary>
+            添加 Nacos 服务（使用 Action 配置）
+            </summary>
+        </member>
+    </members>
+</doc>

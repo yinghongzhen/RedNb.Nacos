@@ -1,0 +1,14 @@
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.csproj.AssemblyReference.cache
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.GeneratedMSBuildEditorConfig.editorconfig
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.AssemblyInfoInputs.cache
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.AssemblyInfo.cs
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.csproj.CoreCompileInputs.cache
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\bin\Debug\net10.0\RedNb.Nacos.deps.json
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\bin\Debug\net10.0\RedNb.Nacos.dll
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\bin\Debug\net10.0\RedNb.Nacos.pdb
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\bin\Debug\net10.0\RedNb.Nacos.xml
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.dll
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\refint\RedNb.Nacos.dll
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.xml
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\RedNb.Nacos.pdb
+D:\4-zckj\server\ZckjV3\src\commons\RedNb.Nacos\src\RedNb.Nacos\obj\Debug\net10.0\ref\RedNb.Nacos.dll

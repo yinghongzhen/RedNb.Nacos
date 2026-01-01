@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "dgSpecHash": "PtMxjFyGvdE=",
+  "success": true,
+  "projectFilePath": "D:\\2-hzkj\\project\\RedNb.Nacos\\src\\RedNb.Nacos.AspNetCore\\RedNb.Nacos.AspNetCore.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\风骑士之怒\\.nuget\\packages\\google.protobuf\\3.29.3\\google.protobuf.3.29.3.nupkg.sha512",
+    "C:\\Users\\风骑士之怒\\.nuget\\packages\\grpc.core.api\\2.67.0\\grpc.core.api.2.67.0.nupkg.sha512",
+    "C:\\Users\\风骑士之怒\\.nuget\\packages\\grpc.net.client\\2.67.0\\grpc.net.client.2.67.0.nupkg.sha512",
+    "C:\\Users\\风骑士之怒\\.nuget\\packages\\grpc.net.common\\2.67.0\\grpc.net.common.2.67.0.nupkg.sha512",
+    "C:\\Users\\风骑士之怒\\.nuget\\packages\\microsoft.extensions.hosting.abstractions\\10.0.0\\microsoft.extensions.hosting.abstractions.10.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference Microsoft.Extensions.Hosting.Abstractions 将不会删除。请考虑从依赖项中移除此包，因为可能不需要它。",
+      "projectPath": "D:\\2-hzkj\\project\\RedNb.Nacos\\src\\RedNb.Nacos.AspNetCore\\RedNb.Nacos.AspNetCore.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\2-hzkj\\project\\RedNb.Nacos\\src\\RedNb.Nacos.AspNetCore\\RedNb.Nacos.AspNetCore.csproj",
+      "libraryId": "Microsoft.Extensions.Hosting.Abstractions",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

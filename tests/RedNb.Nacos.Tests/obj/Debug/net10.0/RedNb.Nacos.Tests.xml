@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RedNb.Nacos.Tests</name>
+    </assembly>
+    <members>
+        <member name="T:RedNb.Nacos.Tests.LoadBalancerTests">
+            <summary>
+            负载均衡器测试
+            </summary>
+        </member>
+        <member name="T:RedNb.Nacos.Tests.NacosOptionsTests">
+            <summary>
+            NacosOptions 配置测试
+            </summary>
+        </member>
+        <member name="T:RedNb.Nacos.Tests.UtilsTests">
+            <summary>
+            工具类测试
+            </summary>
+        </member>
+    </members>
+</doc>
