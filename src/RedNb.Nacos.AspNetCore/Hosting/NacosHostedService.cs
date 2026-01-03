@@ -178,8 +178,23 @@ public sealed class NacosHostedService : IHostedService, IAsyncDisposable
                 {
                     await Task.Delay(_options.Naming.HeartbeatIntervalMs, _heartbeatCts.Token);
 
-                    // gRPC 模式下由服务端维护心跳，这里只做状态检查
-                    _logger.LogDebug("Nacos 心跳维护中...");
+                    if (_registeredInstance != null)
+                    {
+                        var success = await _namingService.SendHeartbeatAsync(
+                            _options.Naming.ServiceName!,
+                            _options.Naming.GroupName,
+                            _registeredInstance,
+                            _heartbeatCts.Token);
+
+                        if (success)
+                        {
+                            _logger.LogDebug("Nacos 心跳发送成功");
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Nacos 心跳发送失败，将在下次重试");
+                        }
+                    }
                 }
                 catch (OperationCanceledException)
                 {

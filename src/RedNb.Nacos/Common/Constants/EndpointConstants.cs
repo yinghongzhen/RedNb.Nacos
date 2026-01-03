@@ -70,11 +70,6 @@ public static class EndpointConstants
     public const string Instance_Update = $"{ApiVersion}/client/ns/instance";
 
     /// <summary>
-    /// 实例心跳
-    /// </summary>
-    public const string Instance_Beat = $"{ApiVersion}/client/ns/instance/beat";
-
-    /// <summary>
     /// 查询实例列表
     /// </summary>
     public const string Instance_List = $"{ApiVersion}/client/ns/instance/list";

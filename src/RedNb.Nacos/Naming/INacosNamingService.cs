@@ -143,4 +143,17 @@ public interface INacosNamingService : IAsyncDisposable
     Task<string> GetServerStatusAsync(CancellationToken cancellationToken = default);
 
     #endregion
+
+    #region 心跳
+
+    /// <summary>
+    /// 发送心跳
+    /// </summary>
+    Task<bool> SendHeartbeatAsync(
+        string serviceName,
+        string groupName,
+        Instance instance,
+        CancellationToken cancellationToken = default);
+
+    #endregion
 }

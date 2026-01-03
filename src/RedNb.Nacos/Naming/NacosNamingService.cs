@@ -196,6 +196,66 @@ public sealed class NacosNamingService : INacosNamingService
             instance.Ip);
     }
 
+    /// <inheritdoc />
+    public async Task<bool> SendHeartbeatAsync(
+        string serviceName,
+        string groupName,
+        Instance instance,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(serviceName);
+        ArgumentNullException.ThrowIfNull(instance);
+        groupName = string.IsNullOrEmpty(groupName) ? NacosConstants.DefaultGroup : groupName;
+
+        // Nacos v3 不再提供独立的心跳接口
+        // 临时实例通过定期重新注册来维持心跳
+        var formParams = new Dictionary<string, string>
+        {
+            ["serviceName"] = serviceName,
+            ["groupName"] = groupName,
+            ["namespaceId"] = _options.Namespace,
+            ["ip"] = instance.Ip,
+            ["port"] = instance.Port.ToString(),
+            ["weight"] = instance.Weight.ToString(),
+            ["enabled"] = instance.Enabled.ToString().ToLower(),
+            ["healthy"] = "true",
+            ["ephemeral"] = instance.Ephemeral.ToString().ToLower(),
+            ["clusterName"] = instance.ClusterName
+        };
+
+        if (instance.Metadata.Count > 0)
+        {
+            formParams["metadata"] = JsonSerializer.Serialize(instance.Metadata);
+        }
+
+        try
+        {
+            // 使用注册接口，Nacos 会自动处理已存在的实例（相当于心跳续约）
+            await _httpClient.PostStringAsync(
+                EndpointConstants.Instance_Register,
+                formParams,
+                requireAuth: false,
+                cancellationToken);
+
+            _logger.LogDebug(
+                "心跳发送成功: serviceName={ServiceName}, ip={Ip}, port={Port}",
+                serviceName,
+                instance.Ip,
+                instance.Port);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "心跳发送失败: serviceName={ServiceName}, ip={Ip}, port={Port}",
+                serviceName,
+                instance.Ip,
+                instance.Port);
+            return false;
+        }
+    }
+
     #endregion
 
     #region 服务发现
