@@ -43,10 +43,32 @@ public enum ConnectionStatus
 public sealed class GrpcConnection : IAsyncDisposable
 {
     private readonly GrpcChannel _channel;
-    private readonly RequestService.RequestServiceClient _requestClient;
-    private readonly BiRequestStreamService.BiRequestStreamServiceClient _biStreamClient;
+    private readonly CallInvoker _callInvoker;
     private readonly ILogger _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
+
+    // 定义 gRPC 方法
+    private static readonly Method<ProtoPayload, ProtoPayload> RequestMethod = new(
+        MethodType.Unary,
+        "Request",
+        "request",
+        Marshallers.Create(
+            payload => payload.ToByteArray(),
+            bytes => ProtoPayload.Parser.ParseFrom(bytes)),
+        Marshallers.Create(
+            payload => payload.ToByteArray(),
+            bytes => ProtoPayload.Parser.ParseFrom(bytes)));
+
+    private static readonly Method<ProtoPayload, ProtoPayload> BiStreamMethod = new(
+        MethodType.DuplexStreaming,
+        "BiRequestStream",
+        "requestBiStream",
+        Marshallers.Create(
+            payload => payload.ToByteArray(),
+            bytes => ProtoPayload.Parser.ParseFrom(bytes)),
+        Marshallers.Create(
+            payload => payload.ToByteArray(),
+            bytes => ProtoPayload.Parser.ParseFrom(bytes)));
 
     private AsyncDuplexStreamingCall<ProtoPayload, ProtoPayload>? _biStream;
     private CancellationTokenSource? _streamCts;
@@ -94,8 +116,7 @@ public sealed class GrpcConnection : IAsyncDisposable
         };
 
         _channel = GrpcChannel.ForAddress(serverAddress, channelOptions);
-        _requestClient = new RequestService.RequestServiceClient(_channel);
-        _biStreamClient = new BiRequestStreamService.BiRequestStreamServiceClient(_channel);
+        _callInvoker = _channel.CreateCallInvoker();
     }
 
     /// <summary>
@@ -131,8 +152,10 @@ public sealed class GrpcConnection : IAsyncDisposable
 
             // 2. 建立双向流
             _streamCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _biStream = _biStreamClient.RequestBiStream(
-                cancellationToken: _streamCts.Token);
+            _biStream = _callInvoker.AsyncDuplexStreamingCall(
+                BiStreamMethod,
+                null,
+                new CallOptions(cancellationToken: _streamCts.Token));
 
             // 3. 发送连接建立请求
             var setupRequest = new ConnectionSetupRequest
@@ -193,9 +216,13 @@ public sealed class GrpcConnection : IAsyncDisposable
 
         try
         {
-            var responsePayload = await _requestClient.SendRequestAsync(
-                payload,
-                cancellationToken: cancellationToken);
+            var call = _callInvoker.AsyncUnaryCall(
+                RequestMethod,
+                null,
+                new CallOptions(cancellationToken: cancellationToken),
+                payload);
+
+            var responsePayload = await call.ResponseAsync;
 
             LastActiveTime = DateTime.UtcNow;
 
@@ -334,7 +361,8 @@ public sealed class GrpcConnection : IAsyncDisposable
     /// </summary>
     private static ProtoPayload CreatePayload<TRequest>(TRequest request) where TRequest : NacosRequest
     {
-        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(request);
+        var json = JsonSerializer.Serialize(request);
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
 
         return new ProtoPayload
         {
@@ -343,7 +371,11 @@ public sealed class GrpcConnection : IAsyncDisposable
                 Type = request.GetRequestType(),
                 ClientIp = NetworkUtils.GetLocalIp()
             },
-            Body = Any.Pack(new ProtoPayload { Body = Any.Pack(new StringValue { Value = Encoding.UTF8.GetString(jsonBytes) }) })
+            Body = new Any
+            {
+                TypeUrl = "type.googleapis.com/google.protobuf.BytesValue",
+                Value = ByteString.CopyFrom(jsonBytes)
+            }
         };
     }
 
@@ -352,7 +384,8 @@ public sealed class GrpcConnection : IAsyncDisposable
     /// </summary>
     private static ProtoPayload CreateResponsePayload(NacosResponse response)
     {
-        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(response);
+        var json = JsonSerializer.Serialize(response);
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
 
         return new ProtoPayload
         {
@@ -361,7 +394,11 @@ public sealed class GrpcConnection : IAsyncDisposable
                 Type = response.GetResponseType(),
                 ClientIp = NetworkUtils.GetLocalIp()
             },
-            Body = Any.Pack(new ProtoPayload { Body = Any.Pack(new StringValue { Value = Encoding.UTF8.GetString(jsonBytes) }) })
+            Body = new Any
+            {
+                TypeUrl = "type.googleapis.com/google.protobuf.BytesValue",
+                Value = ByteString.CopyFrom(jsonBytes)
+            }
         };
     }
 
@@ -383,6 +420,7 @@ public sealed class GrpcConnection : IAsyncDisposable
                 return null;
             }
 
+            _logger.LogDebug("收到响应 JSON: {Json}", json);
             return JsonSerializer.Deserialize<TResponse>(json);
         }
         catch (Exception ex)
@@ -424,7 +462,7 @@ public sealed class GrpcConnection : IAsyncDisposable
             return null;
         }
 
-        // Nacos 使用 JSON 作为 body 内容
+        // Nacos 使用 JSON 作为 body 内容，直接从 Value 字段获取字节
         var bodyBytes = payload.Body.Value.ToByteArray();
         return Encoding.UTF8.GetString(bodyBytes);
     }

@@ -38,14 +38,9 @@ message Payload {
   google.protobuf.Any body = 3;
 }
 
-// Request service for unary requests
-service RequestService {
-  // Sends a common request
-  rpc SendRequest (Payload) returns (Payload);
-}
-
-// BiRequestStream service for bidirectional streaming
-service BiRequestStreamService {
-  // Sends a bidirectional stream request
-  rpc RequestBiStream (stream Payload) returns (stream Payload);
-}
+// Note: gRPC service definitions are not included here because the C# code generator
+// creates naming conflicts when method name equals parameter name (e.g., 'request(request)').
+// The GrpcConnection class uses manual Method descriptors with CallInvoker instead.
+// Nacos gRPC service paths:
+//   - /Request/request (unary)
+//   - /BiRequestStream/requestBiStream (duplex streaming)
