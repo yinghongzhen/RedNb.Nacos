@@ -27,6 +27,15 @@ public interface INacosGrpcClient : IAsyncDisposable
         where TResponse : NacosResponse;
 
     /// <summary>
+    /// 通过双向流发送请求（用于临时实例注册等需要保持连接的场景）
+    /// </summary>
+    Task<TResponse?> StreamRequestAsync<TRequest, TResponse>(
+        TRequest request,
+        CancellationToken cancellationToken = default)
+        where TRequest : NacosRequest
+        where TResponse : NacosResponse;
+
+    /// <summary>
     /// 注册服务端推送处理器
     /// </summary>
     void RegisterPushHandler<TRequest>(Func<TRequest, Task<NacosResponse?>> handler)

@@ -1,6 +1,7 @@
 ﻿using RedNb.Nacos.Common.Failover;
 using RedNb.Nacos.Config.Models;
 using RedNb.Nacos.Remote.Http;
+using RedNb.Nacos.Remote.Http.Models;
 
 namespace RedNb.Nacos.Config;
 
@@ -150,11 +151,28 @@ public sealed class NacosConfigService : INacosConfigService
             ["namespaceId"] = _options.Namespace
         };
 
-        return await _httpClient.GetStringAsync(
+        // Nacos v3 API 返回 JSON 包装格式
+        var response = await _httpClient.GetAsync<NacosApiResponse<ConfigGetResponseData>>(
             EndpointConstants.Config_Get,
             queryParams,
             requireAuth: false,
             cancellationToken);
+
+        if (response == null)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccess)
+        {
+            if (response.Code == 20004) // 配置不存在
+            {
+                return null;
+            }
+            throw new NacosException(response.Code, response.Message ?? "获取配置失败");
+        }
+
+        return response.Data?.Content;
     }
 
     /// <inheritdoc />
@@ -315,13 +333,14 @@ public sealed class NacosConfigService : INacosConfigService
             formParams["type"] = configType;
         }
 
-        var result = await _httpClient.PostStringAsync(
+        // Nacos v3 API 返回格式: {"code": 0, "message": "success", "data": true}
+        var response = await _httpClient.PostAsync<NacosApiResponse<bool>>(
             EndpointConstants.Config_Publish,
             formParams,
             requireAuth: true,
             cancellationToken);
 
-        return result?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+        return response?.IsSuccess == true && response.Data == true;
     }
 
     /// <inheritdoc />
@@ -357,11 +376,14 @@ public sealed class NacosConfigService : INacosConfigService
                 ["namespaceId"] = _options.Namespace
             };
 
-            success = await _httpClient.DeleteAsync(
+            // Nacos v3 API 返回格式: {"code": 0, "message": "success", "data": true}
+            var response = await _httpClient.DeleteAsync<NacosApiResponse<bool>>(
                 EndpointConstants.Config_Delete,
                 queryParams,
                 requireAuth: true,
                 cancellationToken);
+
+            success = response?.IsSuccess == true && response.Data == true;
         }
 
         if (success)
@@ -730,11 +752,14 @@ public sealed class NacosConfigService : INacosConfigService
                     ["namespaceId"] = cacheData.Namespace
                 };
 
-                var newContent = await _httpClient.GetStringAsync(
+                // Nacos v3 API 返回 JSON 包装格式
+                var response = await _httpClient.GetAsync<NacosApiResponse<ConfigGetResponseData>>(
                     EndpointConstants.Config_Get,
                     queryParams,
                     requireAuth: false,
                     cancellationToken);
+
+                var newContent = response?.Data?.Content;
 
                 var oldContent = cacheData.Content;
                 if (cacheData.UpdateContent(newContent))

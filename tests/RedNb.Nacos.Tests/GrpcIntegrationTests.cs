@@ -15,8 +15,20 @@ namespace RedNb.Nacos.Tests;
 /// gRPC 集成测试
 /// 注意：这些测试需要真实的 Nacos 服务器，标记为 Trait("Category", "Integration")
 /// 运行命令：dotnet test --filter "Category=Integration"
+/// 
+/// 配置说明：
+/// 1. 复制 testsettings.template.json 为 testsettings.json
+/// 2. 修改 testsettings.json 中的配置为您的 Nacos 服务器信息
+/// 3. testsettings.json 已在 .gitignore 中排除，不会提交到代码库
+/// 
+/// 本地开发默认配置（testsettings.template.json）：
+/// - 地址: http://localhost:8848
+/// - gRPC 端口: 9848
+/// - 命名空间: public
+/// - 用户名/密码: nacos/nacos
 /// </summary>
 [Trait("Category", "Integration")]
+[Collection("GrpcIntegration")]
 public class GrpcIntegrationTests : IAsyncLifetime
 {
     private ServiceProvider? _serviceProvider;
@@ -25,23 +37,59 @@ public class GrpcIntegrationTests : IAsyncLifetime
     private INacosNamingService? _namingService;
     private NacosOptions? _options;
 
-    // 测试配置 - 根据实际环境修改
-    private const string TestServerAddress = "http://localhost:8848";
-    private const string TestNamespace = "public";
+    // 测试配置 - 从 testsettings.json 读取
+    private string _testServerAddress = "http://localhost:8848";
+    private string _testNamespace = "public";
+    private string? _testUsername;
+    private string? _testPassword;
+    private int _grpcPortOffset = 1000;
+
     private const string TestDataId = "grpc-test-config";
     private const string TestGroup = "DEFAULT_GROUP";
     private const string TestServiceName = "grpc-test-service";
 
     public async Task InitializeAsync()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        // 尝试从 testsettings.json 读取配置
+        var testSettingsPath = Path.Combine(AppContext.BaseDirectory, "testsettings.json");
+        if (File.Exists(testSettingsPath))
+        {
+            var testConfig = new ConfigurationBuilder()
+                .AddJsonFile(testSettingsPath, optional: true)
+                .Build();
+
+            _testServerAddress = testConfig["Nacos:ServerAddress"] ?? _testServerAddress;
+            _testNamespace = testConfig["Nacos:Namespace"] ?? _testNamespace;
+            _testUsername = testConfig["Nacos:Username"];
+            _testPassword = testConfig["Nacos:Password"];
+
+            // 计算 gRPC 端口偏移量
+            if (int.TryParse(testConfig["Nacos:GrpcPort"], out var grpcPort))
             {
-                ["Nacos:ServerAddresses:0"] = TestServerAddress,
-                ["Nacos:Namespace"] = TestNamespace,
-                ["Nacos:UseGrpc"] = "true",
-                ["Nacos:GrpcPortOffset"] = "1000"
-            })
+                var httpUri = new Uri(_testServerAddress);
+                _grpcPortOffset = grpcPort - httpUri.Port;
+            }
+        }
+
+        var configDict = new Dictionary<string, string?>
+        {
+            ["RedNb:Nacos:ServerAddresses:0"] = _testServerAddress,
+            ["RedNb:Nacos:Namespace"] = _testNamespace,
+            ["RedNb:Nacos:UseGrpc"] = "true",
+            ["RedNb:Nacos:GrpcPortOffset"] = _grpcPortOffset.ToString()
+        };
+
+        if (!string.IsNullOrEmpty(_testUsername))
+        {
+            configDict["RedNb:Nacos:UserName"] = _testUsername;
+        }
+        if (!string.IsNullOrEmpty(_testPassword))
+        {
+            configDict["RedNb:Nacos:Password"] = _testPassword;
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configDict)
             .Build();
 
         var services = new ServiceCollection();
@@ -54,7 +102,17 @@ public class GrpcIntegrationTests : IAsyncLifetime
         _namingService = _serviceProvider.GetRequiredService<INacosNamingService>();
         _options = _serviceProvider.GetRequiredService<IOptions<NacosOptions>>().Value;
 
-        await Task.CompletedTask;
+        // 预先建立连接，确保连接稳定
+        if (_options.UseGrpc)
+        {
+            var connected = await _grpcClient.ConnectAsync();
+            if (!connected)
+            {
+                throw new InvalidOperationException("无法连接到 Nacos gRPC 服务");
+            }
+            // 等待连接稳定
+            await Task.Delay(1000);
+        }
     }
 
     public async Task DisposeAsync()
@@ -390,4 +448,20 @@ public class GrpcIntegrationTests : IAsyncLifetime
     }
 
     #endregion
+}
+
+/// <summary>
+/// 测试集合定义，确保测试按顺序执行，避免连接冲突
+/// </summary>
+[CollectionDefinition("GrpcIntegration")]
+public class GrpcIntegrationCollection : ICollectionFixture<GrpcIntegrationFixture>
+{
+}
+
+/// <summary>
+/// gRPC 集成测试固件
+/// </summary>
+public class GrpcIntegrationFixture
+{
+    // 可以在这里添加共享的测试资源
 }

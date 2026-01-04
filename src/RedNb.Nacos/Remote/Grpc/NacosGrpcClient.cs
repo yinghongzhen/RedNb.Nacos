@@ -44,6 +44,13 @@ public sealed class NacosGrpcClient : INacosGrpcClient
                 return true;
             }
 
+            // 检查服务器地址是否配置
+            if (_options.ServerAddresses == null || _options.ServerAddresses.Count == 0)
+            {
+                _logger.LogError("未配置 Nacos 服务器地址 (ServerAddresses)");
+                return false;
+            }
+
             // 尝试连接到所有服务器
             for (var i = 0; i < _options.ServerAddresses.Count; i++)
             {
@@ -134,6 +141,63 @@ public sealed class NacosGrpcClient : INacosGrpcClient
             if (await ReconnectAsync(cancellationToken))
             {
                 return await _currentConnection!.RequestAsync<TRequest, TResponse>(
+                    request, cancellationToken);
+            }
+
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<TResponse?> StreamRequestAsync<TRequest, TResponse>(
+        TRequest request,
+        CancellationToken cancellationToken = default)
+        where TRequest : NacosRequest
+        where TResponse : NacosResponse
+    {
+        // 确保已连接
+        if (!IsConnected)
+        {
+            var connected = await ConnectAsync(cancellationToken);
+            if (!connected)
+            {
+                throw new NacosConnectionException("无法连接到 Nacos 服务器");
+            }
+        }
+
+        // 添加认证信息
+        await AddAuthHeadersAsync(request, cancellationToken);
+
+        try
+        {
+            var response = await _currentConnection!.StreamRequestAsync<TRequest, TResponse>(
+                request, cancellationToken);
+
+            if (response != null && !response.IsSuccess)
+            {
+                _logger.LogWarning("流请求失败: {RequestType}, ErrorCode={ErrorCode}, Message={Message}",
+                    request.GetRequestType(), response.ErrorCode, response.Message);
+
+                // 如果是认证失败，尝试刷新 Token
+                if (response.ErrorCode == 401 || response.ErrorCode == 403)
+                {
+                    await _authService.RefreshTokenAsync(cancellationToken);
+                    await AddAuthHeadersAsync(request, cancellationToken);
+                    return await _currentConnection.StreamRequestAsync<TRequest, TResponse>(
+                        request, cancellationToken);
+                }
+            }
+
+            return response;
+        }
+        catch (NacosConnectionException)
+        {
+            // 连接失败，尝试重连
+            _logger.LogWarning("gRPC 流连接异常，尝试重新连接...");
+
+            if (await ReconnectAsync(cancellationToken))
+            {
+                return await _currentConnection!.StreamRequestAsync<TRequest, TResponse>(
                     request, cancellationToken);
             }
 

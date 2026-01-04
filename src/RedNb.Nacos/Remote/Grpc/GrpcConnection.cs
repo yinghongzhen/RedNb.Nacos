@@ -20,6 +20,7 @@ public sealed class GrpcConnection : IAsyncDisposable
     private readonly CallInvoker _callInvoker;
     private readonly ILogger _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly TaskCompletionSource<bool> _connectionReadyTcs = new();
 
     // 定义 gRPC 方法
     private static readonly Method<ProtoPayload, ProtoPayload> RequestMethod = new(
@@ -124,8 +125,8 @@ public sealed class GrpcConnection : IAsyncDisposable
             ConnectionId = checkResponse.ConnectionId;
             _logger.LogDebug("服务端检查通过，ConnectionId: {ConnectionId}", ConnectionId);
 
-            // 2. 建立双向流
-            _streamCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            // 2. 建立双向流 - 使用独立的 CancellationTokenSource，不与调用方关联
+            _streamCts = new CancellationTokenSource();
             _biStream = _callInvoker.AsyncDuplexStreamingCall(
                 BiStreamMethod,
                 null,
@@ -154,10 +155,27 @@ public sealed class GrpcConnection : IAsyncDisposable
                 }
             };
 
-            await SendBiStreamRequestAsync(setupRequest, cancellationToken);
+            await SendBiStreamRequestAsync(setupRequest, CancellationToken.None);
 
             // 4. 启动接收任务
             _receiveTask = Task.Run(() => ReceiveLoopAsync(_streamCts.Token), _streamCts.Token);
+
+            // 5. 等待连接就绪（服务端处理 ConnectionSetupRequest 需要时间）
+            // 增加等待时间到 5 秒，确保服务端有足够时间处理连接
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+            
+            try
+            {
+                await _connectionReadyTcs.Task.WaitAsync(timeoutCts.Token);
+                _logger.LogDebug("连接就绪确认收到");
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // 超时但未收到确认，添加一个延迟作为后备方案
+                _logger.LogDebug("等待连接就绪超时，使用延迟等待");
+                await Task.Delay(1000, CancellationToken.None);
+            }
 
             Status = EConnectionStatus.Connected;
             LastActiveTime = DateTime.UtcNow;
@@ -186,7 +204,10 @@ public sealed class GrpcConnection : IAsyncDisposable
         where TRequest : NacosRequest
         where TResponse : NacosResponse
     {
-        var payload = CreatePayload(request);
+        // 使用带 connectionId 的 payload（如果连接已建立）
+        var payload = string.IsNullOrEmpty(ConnectionId) 
+            ? CreatePayload(request) 
+            : CreatePayloadWithConnectionId(request);
 
         try
         {
@@ -222,9 +243,65 @@ public sealed class GrpcConnection : IAsyncDisposable
             throw new NacosConnectionException("双向流未建立");
         }
 
-        var payload = CreatePayload(request);
+        var payload = CreatePayloadWithConnectionId(request);
         await _biStream.RequestStream.WriteAsync(payload, cancellationToken);
         LastActiveTime = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 待处理的流请求响应
+    /// </summary>
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<ProtoPayload>> _pendingStreamRequests = new();
+
+    /// <summary>
+    /// 通过双向流发送请求并等待响应
+    /// </summary>
+    public async Task<TResponse?> StreamRequestAsync<TRequest, TResponse>(
+        TRequest request,
+        CancellationToken cancellationToken = default)
+        where TRequest : NacosRequest
+        where TResponse : NacosResponse
+    {
+        if (_biStream == null)
+        {
+            throw new NacosConnectionException("双向流未建立");
+        }
+
+        // 生成请求ID
+        var requestId = Guid.NewGuid().ToString("N");
+        request.RequestId = requestId;
+
+        // 创建等待响应的 TaskCompletionSource
+        var tcs = new TaskCompletionSource<ProtoPayload>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingStreamRequests[requestId] = tcs;
+
+        try
+        {
+            // 发送请求
+            var payload = CreatePayloadWithConnectionId(request);
+            await _biStream.RequestStream.WriteAsync(payload, cancellationToken);
+            LastActiveTime = DateTime.UtcNow;
+
+            _logger.LogDebug("已发送流请求: {RequestType}, RequestId={RequestId}", 
+                request.GetRequestType(), requestId);
+
+            // 等待响应（带超时）
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+
+            var responsePayload = await tcs.Task.WaitAsync(timeoutCts.Token);
+            return ParseResponse<TResponse>(responsePayload);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("流请求超时: {RequestType}, RequestId={RequestId}", 
+                request.GetRequestType(), requestId);
+            throw new NacosConnectionException($"流请求超时: {request.GetRequestType()}");
+        }
+        finally
+        {
+            _pendingStreamRequests.TryRemove(requestId, out _);
+        }
     }
 
     /// <summary>
@@ -234,17 +311,40 @@ public sealed class GrpcConnection : IAsyncDisposable
     {
         if (_biStream == null) return;
 
+        var firstMessageReceived = false;
+
         try
         {
             await foreach (var payload in _biStream.ResponseStream.ReadAllAsync(cancellationToken))
             {
+                // 收到第一条消息，表示连接已就绪
+                if (!firstMessageReceived)
+                {
+                    firstMessageReceived = true;
+                    _connectionReadyTcs.TrySetResult(true);
+                }
+
                 try
                 {
-                    await HandleServerPushAsync(payload);
+                    // 检查是否是响应消息（有 requestId 对应的待处理请求）
+                    var requestId = payload.Metadata?.Headers?.GetValueOrDefault("requestId") 
+                        ?? ExtractRequestIdFromPayload(payload);
+                    
+                    if (!string.IsNullOrEmpty(requestId) && _pendingStreamRequests.TryRemove(requestId, out var tcs))
+                    {
+                        // 这是对流请求的响应
+                        _logger.LogDebug("收到流请求响应: RequestId={RequestId}", requestId);
+                        tcs.TrySetResult(payload);
+                    }
+                    else
+                    {
+                        // 这是服务端推送
+                        await HandleServerPushAsync(payload);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "处理服务端推送消息失败");
+                    _logger.LogError(ex, "处理服务端消息失败");
                 }
             }
         }
@@ -261,6 +361,32 @@ public sealed class GrpcConnection : IAsyncDisposable
             _logger.LogError(ex, "双向流接收异常");
             Status = EConnectionStatus.Disconnected;
         }
+    }
+
+    /// <summary>
+    /// 从 Payload 提取 RequestId
+    /// </summary>
+    private string? ExtractRequestIdFromPayload(ProtoPayload payload)
+    {
+        try
+        {
+            var json = ExtractJsonFromPayload(payload);
+            if (string.IsNullOrEmpty(json))
+            {
+                return null;
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("requestId", out var requestIdElement))
+            {
+                return requestIdElement.GetString();
+            }
+        }
+        catch
+        {
+            // 忽略解析错误
+        }
+        return null;
     }
 
     /// <summary>
@@ -326,12 +452,12 @@ public sealed class GrpcConnection : IAsyncDisposable
     {
         if (_biStream == null) return;
 
-        var payload = CreateResponsePayload(response);
+        var payload = CreateResponsePayloadWithConnectionId(response);
         await _biStream.RequestStream.WriteAsync(payload);
     }
 
     /// <summary>
-    /// 创建请求 Payload
+    /// 创建请求 Payload（不带 connectionId，用于初始连接）
     /// </summary>
     private static ProtoPayload CreatePayload<TRequest>(TRequest request) where TRequest : NacosRequest
     {
@@ -354,7 +480,75 @@ public sealed class GrpcConnection : IAsyncDisposable
     }
 
     /// <summary>
-    /// 创建响应 Payload
+    /// 创建请求 Payload（带 connectionId，用于双向流通信）
+    /// </summary>
+    private ProtoPayload CreatePayloadWithConnectionId<TRequest>(TRequest request) where TRequest : NacosRequest
+    {
+        var json = JsonSerializer.Serialize(request);
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
+
+        var metadata = new ProtoMetadata
+        {
+            Type = request.GetRequestType(),
+            ClientIp = NetworkUtils.GetLocalIp()
+        };
+
+        // 添加 connectionId 到 Headers
+        if (!string.IsNullOrEmpty(ConnectionId))
+        {
+            metadata.Headers["connectionId"] = ConnectionId;
+        }
+
+        // 添加请求的 Headers
+        foreach (var header in request.Headers)
+        {
+            metadata.Headers[header.Key] = header.Value;
+        }
+
+        return new ProtoPayload
+        {
+            Metadata = metadata,
+            Body = new Any
+            {
+                TypeUrl = "type.googleapis.com/google.protobuf.BytesValue",
+                Value = ByteString.CopyFrom(jsonBytes)
+            }
+        };
+    }
+
+    /// <summary>
+    /// 创建响应 Payload（带 connectionId）
+    /// </summary>
+    private ProtoPayload CreateResponsePayloadWithConnectionId(NacosResponse response)
+    {
+        var json = JsonSerializer.Serialize(response);
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
+
+        var metadata = new ProtoMetadata
+        {
+            Type = response.GetResponseType(),
+            ClientIp = NetworkUtils.GetLocalIp()
+        };
+
+        // 添加 connectionId 到 Headers
+        if (!string.IsNullOrEmpty(ConnectionId))
+        {
+            metadata.Headers["connectionId"] = ConnectionId;
+        }
+
+        return new ProtoPayload
+        {
+            Metadata = metadata,
+            Body = new Any
+            {
+                TypeUrl = "type.googleapis.com/google.protobuf.BytesValue",
+                Value = ByteString.CopyFrom(jsonBytes)
+            }
+        };
+    }
+
+    /// <summary>
+    /// 创建响应 Payload（静态方法，用于不需要 connectionId 的场景）
     /// </summary>
     private static ProtoPayload CreateResponsePayload(NacosResponse response)
     {
