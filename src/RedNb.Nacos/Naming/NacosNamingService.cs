@@ -95,6 +95,9 @@ public sealed class NacosNamingService : INacosNamingService
             Instance = GrpcInstance.FromInstance(instance)
         };
 
+        // 对于 gRPC 模式的实例注册，使用普通请求即可
+        // Nacos 服务器会自动将通过双向流连接的客户端视为临时实例
+        // 心跳通过连接保持自动维护
         var response = await _grpcClient!.RequestAsync<InstanceRequest, InstanceResponse>(
             request, cancellationToken);
 

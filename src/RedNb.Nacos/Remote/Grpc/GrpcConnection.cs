@@ -285,9 +285,9 @@ public sealed class GrpcConnection : IAsyncDisposable
             _logger.LogDebug("已发送流请求: {RequestType}, RequestId={RequestId}", 
                 request.GetRequestType(), requestId);
 
-            // 等待响应（带超时）
+            // 等待响应（带超时，增加到 30 秒以适应网络延迟）
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
 
             var responsePayload = await tcs.Task.WaitAsync(timeoutCts.Token);
             return ParseResponse<TResponse>(responsePayload);
@@ -326,15 +326,48 @@ public sealed class GrpcConnection : IAsyncDisposable
 
                 try
                 {
-                    // 检查是否是响应消息（有 requestId 对应的待处理请求）
-                    var requestId = payload.Metadata?.Headers?.GetValueOrDefault("requestId") 
-                        ?? ExtractRequestIdFromPayload(payload);
+                    LastActiveTime = DateTime.UtcNow;
                     
+                    // 记录收到的消息类型和内容
+                    var messageType = payload.Metadata?.Type;
+                    _logger.LogDebug("收到双向流消息: Type={Type}", messageType);
+                    
+                    // 尝试从消息体中提取 requestId
+                    var requestId = ExtractRequestIdFromPayload(payload);
+                    
+                    // 如果没有从 body 中找到，尝试从 headers 中获取
+                    if (string.IsNullOrEmpty(requestId))
+                    {
+                        requestId = payload.Metadata?.Headers?.GetValueOrDefault("requestId");
+                    }
+                    
+                    _logger.LogDebug("消息 RequestId={RequestId}, 待处理请求数={Count}", 
+                        requestId, _pendingStreamRequests.Count);
+                    
+                    // 检查是否是响应消息
                     if (!string.IsNullOrEmpty(requestId) && _pendingStreamRequests.TryRemove(requestId, out var tcs))
                     {
                         // 这是对流请求的响应
                         _logger.LogDebug("收到流请求响应: RequestId={RequestId}", requestId);
                         tcs.TrySetResult(payload);
+                    }
+                    else if (messageType != null && messageType.EndsWith("Response"))
+                    {
+                        // 这可能是一个没有匹配 requestId 的响应
+                        // 尝试匹配任何待处理的请求（用于不返回 requestId 的情况）
+                        if (_pendingStreamRequests.Count == 1)
+                        {
+                            var pendingRequest = _pendingStreamRequests.First();
+                            _logger.LogDebug("匹配单一待处理请求: RequestId={RequestId}", pendingRequest.Key);
+                            if (_pendingStreamRequests.TryRemove(pendingRequest.Key, out var singleTcs))
+                            {
+                                singleTcs.TrySetResult(payload);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning("收到无法匹配的响应: Type={Type}", messageType);
+                        }
                     }
                     else
                     {
