@@ -21,7 +21,7 @@ public sealed class NacosGrpcClient : INacosGrpcClient
     private bool _disposed;
 
     /// <inheritdoc />
-    public bool IsConnected => _currentConnection?.Status == ConnectionStatus.Connected;
+    public bool IsConnected => _currentConnection?.Status == EConnectionStatus.Connected;
 
     public NacosGrpcClient(
         IOptions<NacosOptions> options,
@@ -257,7 +257,7 @@ public sealed class NacosGrpcClient : INacosGrpcClient
                 {
                     await Task.Delay(interval, _healthCheckCts.Token);
 
-                    if (_currentConnection == null || _currentConnection.Status != ConnectionStatus.Connected)
+                    if (_currentConnection == null || _currentConnection.Status != EConnectionStatus.Connected)
                     {
                         continue;
                     }

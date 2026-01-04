@@ -12,32 +12,6 @@ using ProtoPayload = RedNb.Nacos.Remote.Grpc.Proto.Payload;
 namespace RedNb.Nacos.Remote.Grpc;
 
 /// <summary>
-/// gRPC 连接状态
-/// </summary>
-public enum ConnectionStatus
-{
-    /// <summary>
-    /// 未连接
-    /// </summary>
-    Disconnected,
-
-    /// <summary>
-    /// 连接中
-    /// </summary>
-    Connecting,
-
-    /// <summary>
-    /// 已连接
-    /// </summary>
-    Connected,
-
-    /// <summary>
-    /// 重连中
-    /// </summary>
-    Reconnecting
-}
-
-/// <summary>
 /// gRPC 连接信息
 /// </summary>
 public sealed class GrpcConnection : IAsyncDisposable
@@ -87,7 +61,7 @@ public sealed class GrpcConnection : IAsyncDisposable
     /// <summary>
     /// 连接状态
     /// </summary>
-    public ConnectionStatus Status { get; private set; } = ConnectionStatus.Disconnected;
+    public EConnectionStatus Status { get; private set; } = EConnectionStatus.Disconnected;
 
     /// <summary>
     /// 最后活动时间
@@ -127,12 +101,12 @@ public sealed class GrpcConnection : IAsyncDisposable
         await _lock.WaitAsync(cancellationToken);
         try
         {
-            if (Status == ConnectionStatus.Connected)
+            if (Status == EConnectionStatus.Connected)
             {
                 return true;
             }
 
-            Status = ConnectionStatus.Connecting;
+            Status = EConnectionStatus.Connecting;
             _logger.LogDebug("正在连接到 Nacos gRPC 服务: {ServerAddress}", ServerAddress);
 
             // 1. 服务端检查
@@ -143,7 +117,7 @@ public sealed class GrpcConnection : IAsyncDisposable
             if (checkResponse == null || !checkResponse.IsSuccess)
             {
                 _logger.LogError("服务端检查失败: {Message}", checkResponse?.Message);
-                Status = ConnectionStatus.Disconnected;
+                Status = EConnectionStatus.Disconnected;
                 return false;
             }
 
@@ -185,7 +159,7 @@ public sealed class GrpcConnection : IAsyncDisposable
             // 4. 启动接收任务
             _receiveTask = Task.Run(() => ReceiveLoopAsync(_streamCts.Token), _streamCts.Token);
 
-            Status = ConnectionStatus.Connected;
+            Status = EConnectionStatus.Connected;
             LastActiveTime = DateTime.UtcNow;
 
             _logger.LogInformation("已连接到 Nacos gRPC 服务: {ServerAddress}", ServerAddress);
@@ -194,7 +168,7 @@ public sealed class GrpcConnection : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "连接 Nacos gRPC 服务失败: {ServerAddress}", ServerAddress);
-            Status = ConnectionStatus.Disconnected;
+            Status = EConnectionStatus.Disconnected;
             return false;
         }
         finally
@@ -285,7 +259,7 @@ public sealed class GrpcConnection : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "双向流接收异常");
-            Status = ConnectionStatus.Disconnected;
+            Status = EConnectionStatus.Disconnected;
         }
     }
 
@@ -330,7 +304,7 @@ public sealed class GrpcConnection : IAsyncDisposable
             _logger.LogWarning("收到连接重置请求，需要重新连接: {ServerIp}:{ServerPort}",
                 resetRequest.ServerIp, resetRequest.ServerPort);
             response = new ConnectResetResponse { ResultCode = 200 };
-            Status = ConnectionStatus.Disconnected;
+            Status = EConnectionStatus.Disconnected;
         }
         else if (ServerPushHandler != null)
         {
