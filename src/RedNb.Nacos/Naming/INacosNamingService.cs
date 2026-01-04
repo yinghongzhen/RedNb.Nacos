@@ -27,6 +27,15 @@ public interface INacosNamingService : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 批量注册服务实例
+    /// </summary>
+    Task BatchRegisterInstanceAsync(
+        string serviceName,
+        string groupName,
+        List<Instance> instances,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 注销服务实例
     /// </summary>
     Task DeregisterInstanceAsync(
@@ -43,6 +52,15 @@ public interface INacosNamingService : IAsyncDisposable
         string ip,
         int port,
         string? clusterName = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 批量注销服务实例
+    /// </summary>
+    Task BatchDeregisterInstanceAsync(
+        string serviceName,
+        string groupName,
+        List<Instance> instances,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -102,6 +120,11 @@ public interface INacosNamingService : IAsyncDisposable
         int pageSize = 100,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// 获取已订阅的服务列表
+    /// </summary>
+    Task<List<ServiceInfo>> GetSubscribedServicesAsync(CancellationToken cancellationToken = default);
+
     #endregion
 
     #region 服务订阅
@@ -125,11 +148,46 @@ public interface INacosNamingService : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 订阅服务（带差异监听）
+    /// </summary>
+    Task SubscribeAsync(
+        string serviceName,
+        string groupName,
+        INamingChangeListener listener,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 取消订阅
     /// </summary>
     Task UnsubscribeAsync(
         string serviceName,
         string groupName,
+        IEventListener listener,
+        CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region 模糊订阅
+
+    /// <summary>
+    /// 模糊订阅服务
+    /// </summary>
+    /// <param name="servicePattern">服务名模式（支持 * 通配符）</param>
+    /// <param name="groupPattern">分组模式（支持 * 通配符）</param>
+    /// <param name="listener">监听器</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    Task FuzzyWatchAsync(
+        string servicePattern,
+        string groupPattern,
+        IEventListener listener,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 取消模糊订阅
+    /// </summary>
+    Task CancelFuzzyWatchAsync(
+        string servicePattern,
+        string groupPattern,
         IEventListener listener,
         CancellationToken cancellationToken = default);
 

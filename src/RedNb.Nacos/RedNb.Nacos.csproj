@@ -16,6 +16,11 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\*.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

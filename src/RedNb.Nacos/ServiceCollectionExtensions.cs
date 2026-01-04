@@ -1,6 +1,8 @@
 ﻿using RedNb.Nacos.Auth;
+using RedNb.Nacos.Common.Failover;
 using RedNb.Nacos.Config;
 using RedNb.Nacos.Naming;
+using RedNb.Nacos.Remote.Grpc;
 using RedNb.Nacos.Remote.Http;
 
 namespace RedNb.Nacos;
@@ -24,30 +26,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<NacosOptions>(configuration.GetSection(sectionName));
 
-        // 注册 HTTP 客户端
-        services.AddHttpClient("Nacos", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
-
-        services.AddHttpClient("NacosAuth", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
-
-        // 核心服务
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<INacosHttpClient, NacosHttpClient>();
-
-        // 配置服务
-        services.AddSingleton<INacosConfigService, NacosConfigService>();
-
-        // 命名服务
-        services.AddSingleton<INacosNamingService, NacosNamingService>();
-
-        return services;
+        return services.AddNacosCore();
     }
 
     /// <summary>
@@ -59,30 +38,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure(configure);
 
-        // 注册 HTTP 客户端
-        services.AddHttpClient("Nacos", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
-
-        services.AddHttpClient("NacosAuth", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
-
-        // 核心服务
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<INacosHttpClient, NacosHttpClient>();
-
-        // 配置服务
-        services.AddSingleton<INacosConfigService, NacosConfigService>();
-
-        // 命名服务
-        services.AddSingleton<INacosNamingService, NacosNamingService>();
-
-        return services;
+        return services.AddNacosCore();
     }
 
     /// <summary>
@@ -95,20 +51,12 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<NacosOptions>(configuration.GetSection(sectionName));
 
-        services.AddHttpClient("Nacos", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
+        services.AddNacosHttpClients();
+        services.AddNacosBaseServices();
+        services.AddNacosSnapshot();
+        services.AddNacosGrpc();
 
-        services.AddHttpClient("NacosAuth", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
-        });
-
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<INacosHttpClient, NacosHttpClient>();
+        // 仅配置服务
         services.AddSingleton<INacosConfigService, NacosConfigService>();
 
         return services;
@@ -124,6 +72,41 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<NacosOptions>(configuration.GetSection(sectionName));
 
+        services.AddNacosHttpClients();
+        services.AddNacosBaseServices();
+        services.AddNacosSnapshot();
+        services.AddNacosGrpc();
+
+        // 仅命名服务
+        services.AddSingleton<INacosNamingService, NacosNamingService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 添加核心 Nacos 服务（完整功能）
+    /// </summary>
+    private static IServiceCollection AddNacosCore(this IServiceCollection services)
+    {
+        services.AddNacosHttpClients();
+        services.AddNacosBaseServices();
+        services.AddNacosSnapshot();
+        services.AddNacosGrpc();
+
+        // 配置服务
+        services.AddSingleton<INacosConfigService, NacosConfigService>();
+
+        // 命名服务
+        services.AddSingleton<INacosNamingService, NacosNamingService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册 HTTP 客户端
+    /// </summary>
+    private static IServiceCollection AddNacosHttpClients(this IServiceCollection services)
+    {
         services.AddHttpClient("Nacos", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
@@ -136,9 +119,37 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos/1.0");
         });
 
+        return services;
+    }
+
+    /// <summary>
+    /// 注册基础服务（认证、HTTP 客户端）
+    /// </summary>
+    private static IServiceCollection AddNacosBaseServices(this IServiceCollection services)
+    {
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<INacosHttpClient, NacosHttpClient>();
-        services.AddSingleton<INacosNamingService, NacosNamingService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册快照/容灾服务
+    /// </summary>
+    private static IServiceCollection AddNacosSnapshot(this IServiceCollection services)
+    {
+        services.AddSingleton<IConfigSnapshot, LocalFileConfigSnapshot>();
+        services.AddSingleton<IServiceSnapshot, LocalFileServiceSnapshot>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册 gRPC 服务
+    /// </summary>
+    private static IServiceCollection AddNacosGrpc(this IServiceCollection services)
+    {
+        services.AddSingleton<INacosGrpcClient, NacosGrpcClient>();
 
         return services;
     }
