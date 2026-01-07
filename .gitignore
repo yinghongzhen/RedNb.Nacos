@@ -115,6 +115,9 @@ $RECYCLE.BIN/
 appsettings.local.json
 appsettings.*.local.json
 
+# Test settings (contains sensitive credentials)
+testsettings.json
+
 # Publish directory
 publish/
 PublishOutput/

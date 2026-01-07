@@ -4,6 +4,7 @@ using RedNb.Nacos.Common.Options;
 using RedNb.Nacos.Config;
 using RedNb.Nacos.Naming;
 using RedNb.Nacos.Naming.Models;
+using RedNb.Nacos.Remote.Grpc;
 
 namespace RedNb.Nacos.Sample.WebApi.Controllers;
 
@@ -17,6 +18,7 @@ public class NacosController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly INacosConfigService _configService;
     private readonly INacosNamingService _namingService;
+    private readonly INacosGrpcClient? _grpcClient;
     private readonly NacosOptions _options;
     private readonly ILogger<NacosController> _logger;
 
@@ -25,14 +27,95 @@ public class NacosController : ControllerBase
         INacosConfigService configService,
         INacosNamingService namingService,
         IOptions<NacosOptions> options,
-        ILogger<NacosController> logger)
+        ILogger<NacosController> logger,
+        INacosGrpcClient? grpcClient = null)
     {
         _configuration = configuration;
         _configService = configService;
         _namingService = namingService;
+        _grpcClient = grpcClient;
         _options = options.Value;
         _logger = logger;
     }
+
+    #region gRPC 状态
+
+    /// <summary>
+    /// 获取 gRPC 连接状态
+    /// </summary>
+    [HttpGet("grpc/status")]
+    public IActionResult GetGrpcStatus()
+    {
+        return Ok(new
+        {
+            enabled = _options.UseGrpc,
+            grpcPortOffset = _options.GrpcPortOffset,
+            isConnected = _grpcClient?.IsConnected ?? false,
+            grpcEndpoints = _options.ServerAddresses.Select(addr =>
+            {
+                var uri = new Uri(addr.StartsWith("http") ? addr : $"http://{addr}");
+                return $"{uri.Host}:{uri.Port + _options.GrpcPortOffset}";
+            }).ToList()
+        });
+    }
+
+    /// <summary>
+    /// 测试 gRPC 连接
+    /// </summary>
+    [HttpPost("grpc/connect")]
+    public async Task<IActionResult> TestGrpcConnect()
+    {
+        if (_grpcClient == null)
+        {
+            return BadRequest(new { success = false, message = "gRPC 客户端未启用" });
+        }
+
+        try
+        {
+            var connected = await _grpcClient.ConnectAsync();
+            return Ok(new
+            {
+                success = connected,
+                isConnected = _grpcClient.IsConnected,
+                message = connected ? "gRPC 连接成功" : "gRPC 连接失败"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "gRPC 连接测试失败");
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// 测试 gRPC 重连
+    /// </summary>
+    [HttpPost("grpc/reconnect")]
+    public async Task<IActionResult> TestGrpcReconnect()
+    {
+        if (_grpcClient == null)
+        {
+            return BadRequest(new { success = false, message = "gRPC 客户端未启用" });
+        }
+
+        try
+        {
+            var reconnected = await _grpcClient.ReconnectAsync();
+            return Ok(new
+            {
+                success = reconnected,
+                isConnected = _grpcClient.IsConnected,
+                message = reconnected ? "gRPC 重连成功" : "gRPC 重连失败"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "gRPC 重连测试失败");
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// 获取配置

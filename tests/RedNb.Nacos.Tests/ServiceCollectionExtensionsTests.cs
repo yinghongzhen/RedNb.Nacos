@@ -24,8 +24,8 @@ public class ServiceCollectionExtensionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nacos:ServerAddresses:0"] = "http://localhost:8848",
-                ["Nacos:Namespace"] = "test"
+                ["RedNb:Nacos:ServerAddresses:0"] = "http://localhost:8848",
+                ["RedNb:Nacos:Namespace"] = "test"
             })
             .Build();
 
@@ -72,7 +72,7 @@ public class ServiceCollectionExtensionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nacos:ServerAddresses:0"] = "http://localhost:8848"
+                ["RedNb:Nacos:ServerAddresses:0"] = "http://localhost:8848"
             })
             .Build();
 
@@ -93,7 +93,7 @@ public class ServiceCollectionExtensionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nacos:ServerAddresses:0"] = "http://localhost:8848"
+                ["RedNb:Nacos:ServerAddresses:0"] = "http://localhost:8848"
             })
             .Build();
 
@@ -114,8 +114,8 @@ public class ServiceCollectionExtensionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nacos:ServerAddresses:0"] = "http://localhost:8848",
-                ["Nacos:Failover:Enabled"] = "true"
+                ["RedNb:Nacos:ServerAddresses:0"] = "http://localhost:8848",
+                ["RedNb:Nacos:Failover:Enabled"] = "true"
             })
             .Build();
 
@@ -141,8 +141,8 @@ public class ServiceCollectionExtensionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nacos:ServerAddresses:0"] = "http://localhost:8848",
-                ["Nacos:UseGrpc"] = "true"
+                ["RedNb:Nacos:ServerAddresses:0"] = "http://localhost:8848",
+                ["RedNb:Nacos:UseGrpc"] = "true"
             })
             .Build();
 
