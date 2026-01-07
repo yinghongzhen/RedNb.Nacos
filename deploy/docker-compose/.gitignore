@@ -1,0 +1,20 @@
+# 忽略数据和日志文件
+mysql/data/*
+!mysql/data/.gitkeep
+
+nacos/logs/*
+!nacos/logs/.gitkeep
+
+nacos/data/*
+!nacos/data/.gitkeep
+
+# 集群模式的数据目录
+nacos/logs/nacos1/*
+nacos/logs/nacos2/*
+nacos/logs/nacos3/*
+nacos/data/nacos1/*
+nacos/data/nacos2/*
+nacos/data/nacos3/*
+
+# 环境变量文件（包含敏感信息）
+.env
