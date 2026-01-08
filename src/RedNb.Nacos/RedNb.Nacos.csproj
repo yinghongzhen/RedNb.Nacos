@@ -23,4 +23,8 @@
     <Protobuf Include="Protos\*.proto" GrpcServices="Client" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Protos\Protos\" />
+  </ItemGroup>
+
 </Project>
