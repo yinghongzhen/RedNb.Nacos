@@ -1,92 +1,196 @@
-﻿namespace RedNb.Nacos.Naming.Models;
+using System.Text.Json.Serialization;
+
+namespace RedNb.Nacos.Core.Naming;
 
 /// <summary>
-/// 服务信息
+/// Service information with instances, used in data pushing and cached for nacos-client.
 /// </summary>
-public sealed class ServiceInfo
+public class ServiceInfo
 {
     /// <summary>
-    /// 服务名称
+    /// Service name.
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 分组名称
+    /// Group name.
     /// </summary>
     [JsonPropertyName("groupName")]
     public string GroupName { get; set; } = NacosConstants.DefaultGroup;
 
     /// <summary>
-    /// 集群信息
+    /// Clusters.
     /// </summary>
     [JsonPropertyName("clusters")]
-    public string Clusters { get; set; } = string.Empty;
+    public string? Clusters { get; set; }
 
     /// <summary>
-    /// 缓存时间（毫秒）
+    /// Cache milliseconds.
     /// </summary>
     [JsonPropertyName("cacheMillis")]
-    public long CacheMillis { get; set; } = 1000;
+    public long CacheMillis { get; set; } = 1000L;
 
     /// <summary>
-    /// 实例列表
+    /// Service instances (hosts).
     /// </summary>
     [JsonPropertyName("hosts")]
     public List<Instance> Hosts { get; set; } = new();
 
     /// <summary>
-    /// 最后刷新时间
+    /// Last refresh time.
     /// </summary>
     [JsonPropertyName("lastRefTime")]
     public long LastRefTime { get; set; }
 
     /// <summary>
-    /// 校验和
+    /// Checksum.
     /// </summary>
     [JsonPropertyName("checksum")]
     public string Checksum { get; set; } = string.Empty;
 
     /// <summary>
-    /// 是否返回所有 IP
+    /// Whether all IPs are returned.
     /// </summary>
-    [JsonPropertyName("allIPs")]
-    public bool AllIPs { get; set; }
+    [JsonPropertyName("allIps")]
+    public bool AllIps { get; set; }
 
     /// <summary>
-    /// 是否达到保护阈值
+    /// Whether protection threshold is reached.
     /// </summary>
     [JsonPropertyName("reachProtectionThreshold")]
     public bool ReachProtectionThreshold { get; set; }
 
     /// <summary>
-    /// 获取服务 Key
+    /// JSON from server (for caching purposes).
     /// </summary>
-    public string GetServiceKey() => $"{GroupName}@@{Name}";
+    [JsonIgnore]
+    public string? JsonFromServer { get; set; }
 
-    /// <summary>
-    /// 获取健康实例
-    /// </summary>
-    public List<Instance> GetHealthyInstances()
+    public ServiceInfo()
     {
-        return Hosts.Where(h => h.Healthy && h.Enabled).ToList();
     }
-}
 
-/// <summary>
-/// 服务列表响应
-/// </summary>
-public sealed class ServiceListResponse
-{
-    /// <summary>
-    /// 服务数量
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int Count { get; set; }
+    public ServiceInfo(string name, string? clusters = null)
+    {
+        Name = name;
+        Clusters = clusters;
+    }
 
     /// <summary>
-    /// 服务名称列表
+    /// Constructs ServiceInfo from a key string.
     /// </summary>
-    [JsonPropertyName("doms")]
-    public List<string> Services { get; set; } = new();
+    /// <param name="key">Key in format: groupName@@serviceName@@clusters</param>
+    public ServiceInfo(string key, bool parseFromKey)
+    {
+        if (!parseFromKey)
+        {
+            Name = key;
+            return;
+        }
+
+        var parts = key.Split(NacosConstants.ServiceInfoSplitter);
+        if (parts.Length >= 3)
+        {
+            GroupName = parts[0];
+            Name = parts[1];
+            Clusters = parts[2];
+        }
+        else if (parts.Length == 2)
+        {
+            GroupName = parts[0];
+            Name = parts[1];
+        }
+        else
+        {
+            throw new ArgumentException($"Can't parse out 'groupName' from key: {key}");
+        }
+    }
+
+    /// <summary>
+    /// Gets the count of instances.
+    /// </summary>
+    public int IpCount() => Hosts.Count;
+
+    /// <summary>
+    /// Checks if the service info has expired.
+    /// </summary>
+    public bool Expired() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - LastRefTime > CacheMillis;
+
+    /// <summary>
+    /// Checks if the service info is valid.
+    /// </summary>
+    public bool IsValid() => Hosts.Count > 0;
+
+    /// <summary>
+    /// Validates if service info has valid healthy instances.
+    /// </summary>
+    public bool Validate()
+    {
+        if (AllIps) return true;
+        return Hosts.Any(h => h.Healthy && h.Weight > 0);
+    }
+
+    /// <summary>
+    /// Gets the unique key for this service info.
+    /// </summary>
+    [JsonIgnore]
+    public string Key
+    {
+        get
+        {
+            var serviceName = GetGroupedServiceName();
+            return GetKey(serviceName, Clusters);
+        }
+    }
+
+    /// <summary>
+    /// Gets the grouped service name.
+    /// </summary>
+    public string GetGroupedServiceName()
+    {
+        if (!string.IsNullOrEmpty(GroupName) && !Name.Contains(NacosConstants.ServiceInfoSplitter))
+        {
+            return $"{GroupName}{NacosConstants.ServiceInfoSplitter}{Name}";
+        }
+        return Name;
+    }
+
+    /// <summary>
+    /// Gets a key from service name and clusters.
+    /// </summary>
+    public static string GetKey(string name, string? clusters)
+    {
+        if (!string.IsNullOrEmpty(clusters))
+        {
+            return $"{name}{NacosConstants.ServiceInfoSplitter}{clusters}";
+        }
+        return name;
+    }
+
+    /// <summary>
+    /// Creates ServiceInfo from a key.
+    /// </summary>
+    public static ServiceInfo FromKey(string key)
+    {
+        return new ServiceInfo(key, parseFromKey: true);
+    }
+
+    public override string ToString() => Key;
+
+    /// <summary>
+    /// Adds an instance to the hosts list.
+    /// </summary>
+    public void AddHost(Instance host)
+    {
+        Hosts.Add(host);
+    }
+
+    /// <summary>
+    /// Adds multiple instances to the hosts list.
+    /// </summary>
+    public void AddAllHosts(IEnumerable<Instance> hosts)
+    {
+        Hosts.AddRange(hosts);
+    }
 }

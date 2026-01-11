@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <RootNamespace>RedNb.Nacos.All</RootNamespace>
+    <AssemblyName>RedNb.Nacos.All</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>RedNb</Authors>
+    <Description>Nacos .NET SDK All-in-One - Meta package that includes all Nacos SDK components for easy installation</Description>
+    <PackageTags>nacos;service-discovery;config;microservices;all-in-one</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>RedNb.Nacos.All</PackageId>
+    <!-- This is a meta package - no source code -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+  </PropertyGroup>
+
+  <!-- Reference all main packages -->
+  <ItemGroup>
+    <ProjectReference Include="..\RedNb.Nacos\RedNb.Nacos.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.Http\RedNb.Nacos.Http.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.Grpc\RedNb.Nacos.Grpc.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.DependencyInjection\RedNb.Nacos.DependencyInjection.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.AspNetCore\RedNb.Nacos.AspNetCore.csproj" />
+  </ItemGroup>
+
+</Project>

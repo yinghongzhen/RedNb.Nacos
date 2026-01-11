@@ -1,26 +1,45 @@
-﻿using RedNb.Nacos;
-using RedNb.Nacos.AspNetCore;
-using RedNb.Nacos.AspNetCore.Hosting;
-using RedNb.Nacos.Configuration;
+using RedNb.Nacos.DependencyInjection;
+using RedNb.Nacos.AspNetCore.Configuration;
+using RedNb.Nacos.AspNetCore.HealthChecks;
+using RedNb.Nacos.AspNetCore.ServiceRegistry;
+using RedNb.Nacos.Core;
+using RedNb.Nacos.Core.Naming;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 加载本地配置文件（包含敏感信息，不会提交到 Git）
-// 本地配置文件会覆盖 appsettings.json 和 appsettings.{Environment}.json 中的配置
-builder.Configuration.AddJsonFile(
-    $"appsettings.{builder.Environment.EnvironmentName}.local.json",
-    optional: true,
-    reloadOnChange: true);
+// Add Nacos configuration as a source
+builder.Configuration.AddNacosConfiguration(source =>
+{
+    source.Options.ServerAddresses = "localhost:8848";
+    source.Options.Username = "nacos";
+    source.Options.Password = "nacos";
+    source.Options.Namespace = "";
+    source.ConfigItems.Add(new NacosConfigurationItem { DataId = "app-config", Group = "DEFAULT_GROUP" });
+    source.ConfigItems.Add(new NacosConfigurationItem { DataId = "db-config", Group = "DEFAULT_GROUP", Optional = true });
+});
 
-// 从 appsettings.json 配置节读取 Nacos 配置
-builder.Services.AddRedNbNacosAspNetCore(builder.Configuration, "RedNb:Nacos");
+// Add Nacos services using DI extensions
+builder.Services.AddNacos(options =>
+{
+    options.ServerAddresses = "localhost:8848";
+    options.Username = "nacos";
+    options.Password = "nacos";
+    options.Namespace = "";
+    options.DefaultTimeout = 5000;
+});
 
+// Add Nacos health checks
+builder.Services.AddHealthChecks()
+    .AddNacos();
+
+// Add controllers and Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -30,5 +49,18 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Map health check endpoint
+app.MapHealthChecks("/health");
+
+// Use Nacos service registry for automatic registration
+app.UseNacosServiceRegistry(
+    serviceName: "sample-webapi",
+    port: 5000,
+    metadata: new Dictionary<string, string>
+    {
+        { "version", "1.0.0" },
+        { "env", app.Environment.EnvironmentName }
+    });
 
 app.Run();

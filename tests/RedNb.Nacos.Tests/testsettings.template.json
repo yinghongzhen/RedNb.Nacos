@@ -1,9 +1,0 @@
-{
-  "Nacos": {
-    "ServerAddress": "http://localhost:8848",
-    "GrpcPort": 9848,
-    "Namespace": "public",
-    "Username": "nacos",
-    "Password": "nacos"
-  }
-}

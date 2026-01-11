@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <RootNamespace>RedNb.Nacos.Grpc</RootNamespace>
+    <AssemblyName>RedNb.Nacos.Grpc</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>RedNb</Authors>
+    <Description>Nacos .NET SDK gRPC Client - High-performance gRPC-based Nacos client</Description>
+    <PackageTags>nacos;service-discovery;config;microservices;grpc</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>RedNb.Nacos.Grpc</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RedNb.Nacos\RedNb.Nacos.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.Http\RedNb.Nacos.Http.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.29.2" />
+    <PackageReference Include="Grpc.Tools" Version="2.67.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\*.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+</Project>

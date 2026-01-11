@@ -1,18 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>RedNb.Nacos.AspNetCore</PackageId>
-    <Title>RedNb Nacos ASP.NET Core Integration</Title>
-    <Description>RedNb Nacos SDK ASP.NET Core 集成 - 服务注册、健康检查、Host 扩展</Description>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <RootNamespace>RedNb.Nacos.AspNetCore</RootNamespace>
+    <AssemblyName>RedNb.Nacos.AspNetCore</AssemblyName>
     <Version>1.0.0</Version>
+    <Authors>RedNb</Authors>
+    <Description>Nacos .NET SDK ASP.NET Core Integration - Configuration provider, health checks, service discovery and middleware</Description>
+    <PackageTags>nacos;service-discovery;config;microservices;aspnetcore;configuration;health-check</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>RedNb.Nacos.AspNetCore</PackageId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RedNb.Nacos\RedNb.Nacos.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.Http\RedNb.Nacos.Http.csproj" />
+    <ProjectReference Include="..\RedNb.Nacos.DependencyInjection\RedNb.Nacos.DependencyInjection.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RedNb.Nacos\RedNb.Nacos.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
