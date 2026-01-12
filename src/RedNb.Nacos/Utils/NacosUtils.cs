@@ -1,190 +1,123 @@
-using System.Security.Cryptography;
-using System.Text;
+using RedNb.Nacos.Utils.Crypto;
+using RedNb.Nacos.Utils.Keys;
+using RedNb.Nacos.Utils.Naming;
+using RedNb.Nacos.Utils.Network;
+using RedNb.Nacos.Utils.Strings;
+using RedNb.Nacos.Utils.Time;
 
-namespace RedNb.Nacos.Core.Utils;
+namespace RedNb.Nacos.Utils;
 
 /// <summary>
-/// Common utility methods.
+/// Facade class for common utility methods.
+/// Provides backward compatibility by delegating to specialized helper classes.
 /// </summary>
+/// <remarks>
+/// Consider using the specialized helper classes directly for better clarity:
+/// <list type="bullet">
+///   <item><see cref="HashHelper"/> - Cryptography operations</item>
+///   <item><see cref="TimeHelper"/> - Time operations</item>
+///   <item><see cref="GroupKeyHelper"/> - Config group key operations</item>
+///   <item><see cref="ServiceNameHelper"/> - Naming service operations</item>
+///   <item><see cref="UrlHelper"/> - URL encoding/query string</item>
+///   <item><see cref="IpHelper"/> - IP address validation</item>
+///   <item><see cref="StringHelper"/> - String validation</item>
+/// </list>
+/// </remarks>
 public static class NacosUtils
 {
     /// <summary>
     /// Calculates MD5 hash of a string.
     /// </summary>
-    public static string GetMd5(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-        {
-            return string.Empty;
-        }
-
-        var inputBytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = MD5.HashData(inputBytes);
-        return Convert.ToHexStringLower(hashBytes);
-    }
+    public static string GetMd5(string input) 
+        => HashHelper.GetMd5(input);
 
     /// <summary>
     /// Gets current timestamp in milliseconds.
     /// </summary>
-    public static long GetCurrentTimeMillis()
-    {
-        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-    }
+    public static long GetCurrentTimeMillis() 
+        => TimeHelper.GetCurrentTimeMillis();
 
     /// <summary>
     /// Generates a unique group key.
     /// </summary>
-    public static string GetGroupKey(string dataId, string group)
-    {
-        return $"{dataId}+{group}";
-    }
+    public static string GetGroupKey(string dataId, string group) 
+        => GroupKeyHelper.GetGroupKey(dataId, group);
 
     /// <summary>
     /// Generates a unique group key with tenant.
     /// </summary>
-    public static string GetGroupKey(string dataId, string group, string? tenant)
-    {
-        if (string.IsNullOrWhiteSpace(tenant))
-        {
-            return GetGroupKey(dataId, group);
-        }
-        return $"{dataId}+{group}+{tenant}";
-    }
+    public static string GetGroupKey(string dataId, string group, string? tenant) 
+        => GroupKeyHelper.GetGroupKey(dataId, group, tenant);
 
     /// <summary>
     /// Parses group key into components.
     /// </summary>
-    public static (string DataId, string Group, string? Tenant) ParseGroupKey(string groupKey)
-    {
-        var parts = groupKey.Split('+');
-        return parts.Length switch
-        {
-            3 => (parts[0], parts[1], parts[2]),
-            2 => (parts[0], parts[1], null),
-            _ => throw new ArgumentException($"Invalid group key: {groupKey}")
-        };
-    }
+    public static (string DataId, string Group, string? Tenant) ParseGroupKey(string groupKey) 
+        => GroupKeyHelper.ParseGroupKey(groupKey);
 
     /// <summary>
     /// Gets grouped service name.
     /// </summary>
-    public static string GetGroupedServiceName(string serviceName, string groupName)
-    {
-        if (serviceName.Contains(NacosConstants.ServiceInfoSplitter))
-        {
-            return serviceName;
-        }
-        return $"{groupName}{NacosConstants.ServiceInfoSplitter}{serviceName}";
-    }
+    public static string GetGroupedServiceName(string serviceName, string groupName) 
+        => ServiceNameHelper.GetGroupedServiceName(serviceName, groupName);
 
     /// <summary>
     /// Parses grouped service name.
     /// </summary>
-    public static (string ServiceName, string GroupName) ParseGroupedServiceName(string groupedName)
-    {
-        var idx = groupedName.LastIndexOf(NacosConstants.ServiceInfoSplitter, StringComparison.Ordinal);
-        if (idx > 0)
-        {
-            var groupName = groupedName[..idx];
-            var serviceName = groupedName[(idx + NacosConstants.ServiceInfoSplitter.Length)..];
-            return (serviceName, groupName);
-        }
-        return (groupedName, NacosConstants.DefaultGroup);
-    }
+    public static (string ServiceName, string GroupName) ParseGroupedServiceName(string groupedName) 
+        => ServiceNameHelper.ParseGroupedServiceName(groupedName);
 
     /// <summary>
     /// Checks if a string is a number.
     /// </summary>
-    public static bool IsNumber(string? value)
-    {
-        return !string.IsNullOrEmpty(value) && long.TryParse(value, out _);
-    }
+    public static bool IsNumber(string? value) 
+        => StringHelper.IsNumber(value);
 
     /// <summary>
     /// URL encodes a string.
     /// </summary>
-    public static string UrlEncode(string value)
-    {
-        return Uri.EscapeDataString(value);
-    }
+    public static string UrlEncode(string value) 
+        => UrlHelper.UrlEncode(value);
 
     /// <summary>
     /// URL decodes a string.
     /// </summary>
-    public static string UrlDecode(string value)
-    {
-        return Uri.UnescapeDataString(value);
-    }
+    public static string UrlDecode(string value) 
+        => UrlHelper.UrlDecode(value);
 
     /// <summary>
     /// Checks if a string is null, empty, or whitespace.
     /// </summary>
-    public static bool IsBlank(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value);
-    }
+    public static bool IsBlank(string? value) 
+        => StringHelper.IsBlank(value);
 
     /// <summary>
     /// Checks if a string is not null, empty, or whitespace.
     /// </summary>
-    public static bool IsNotBlank(string? value)
-    {
-        return !string.IsNullOrWhiteSpace(value);
-    }
+    public static bool IsNotBlank(string? value) 
+        => StringHelper.IsNotBlank(value);
 
     /// <summary>
     /// Checks if a string is a valid IPv4 address.
     /// </summary>
-    public static bool IsIpv4(string? ip)
-    {
-        if (string.IsNullOrEmpty(ip))
-        {
-            return false;
-        }
-
-        if (System.Net.IPAddress.TryParse(ip, out var address))
-        {
-            return address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
-        }
-
-        return false;
-    }
+    public static bool IsIpv4(string? ip) 
+        => IpHelper.IsIpv4(ip);
 
     /// <summary>
     /// Builds query string from dictionary.
     /// </summary>
-    public static string BuildQueryString(Dictionary<string, string?> parameters)
-    {
-        var pairs = parameters
-            .Where(kvp => kvp.Value != null)
-            .Select(kvp => $"{UrlEncode(kvp.Key)}={UrlEncode(kvp.Value!)}");
-        return string.Join("&", pairs);
-    }
+    public static string BuildQueryString(Dictionary<string, string?> parameters) 
+        => UrlHelper.BuildQueryString(parameters);
 
     /// <summary>
     /// Gets cluster string from list.
     /// </summary>
-    public static string GetClusterString(List<string>? clusters)
-    {
-        if (clusters == null || clusters.Count == 0)
-        {
-            return string.Empty;
-        }
-        return string.Join(",", clusters.Where(c => !string.IsNullOrWhiteSpace(c)));
-    }
+    public static string GetClusterString(List<string>? clusters) 
+        => ServiceNameHelper.GetClusterString(clusters);
 
     /// <summary>
     /// Parses cluster string to list.
     /// </summary>
-    public static List<string> ParseClusterString(string? clusters)
-    {
-        if (string.IsNullOrWhiteSpace(clusters))
-        {
-            return new List<string>();
-        }
-        return clusters.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(c => c.Trim())
-            .Where(c => !string.IsNullOrEmpty(c))
-            .ToList();
-    }
+    public static List<string> ParseClusterString(string? clusters) 
+        => ServiceNameHelper.ParseClusterString(clusters);
 }

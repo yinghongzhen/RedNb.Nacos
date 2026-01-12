@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Ai.Listener;
+using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
 
@@ -234,6 +235,69 @@ public class NacosGrpcAiService : IAiService
 
         _logger?.LogDebug("Unsubscribed from MCP server {McpName}@{Version}", mcpName, version);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteMcpServerAsync(string mcpName, string? version = null, CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+
+        var request = new McpServerDeleteRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<OperationResponse>(
+            "McpServerDeleteRequest", request, cancellationToken);
+
+        if (response?.Success != true)
+        {
+            throw new NacosException(NacosException.ServerError, response?.Message ?? "Failed to delete MCP server");
+        }
+
+        // Remove from cache
+        var key = GetMcpKey(mcpName, version);
+        _mcpCache.TryRemove(key, out _);
+
+        _logger?.LogInformation("Deleted MCP server {McpName}@{Version}", mcpName, version ?? "all");
+    }
+
+    /// <inheritdoc />
+    public async Task<PageResult<McpServerBasicInfo>> ListMcpServersAsync(
+        string? mcpName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNo < 1) pageNo = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var request = new McpServerListRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            Search = search,
+            PageNo = pageNo,
+            PageSize = pageSize
+        };
+
+        var response = await _grpcClient.RequestAsync<McpServerListResponse>(
+            "McpServerListRequest", request, cancellationToken);
+
+        if (response == null)
+        {
+            return PageResult<McpServerBasicInfo>.Empty(pageNo, pageSize);
+        }
+
+        return PageResult<McpServerBasicInfo>.FromItems(
+            response.McpServers ?? new List<McpServerBasicInfo>(),
+            response.TotalCount,
+            pageNo,
+            pageSize);
     }
 
     #endregion
@@ -470,6 +534,86 @@ public class NacosGrpcAiService : IAiService
 
         _logger?.LogDebug("Unsubscribed from Agent Card {AgentName}@{Version}", agentName, version);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAgentAsync(string agentName, string? version = null, CancellationToken cancellationToken = default)
+    {
+        ValidateAgentName(agentName);
+
+        var request = new AgentDeleteRequest
+        {
+            Namespace = _namespaceId,
+            AgentName = agentName,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<OperationResponse>(
+            "AgentDeleteRequest", request, cancellationToken);
+
+        if (response?.Success != true)
+        {
+            throw new NacosException(NacosException.ServerError, response?.Message ?? "Failed to delete Agent");
+        }
+
+        // Remove from cache
+        var key = GetAgentKey(agentName, version);
+        _agentCache.TryRemove(key, out _);
+
+        _logger?.LogInformation("Deleted Agent {AgentName}@{Version}", agentName, version ?? "all");
+    }
+
+    /// <inheritdoc />
+    public async Task<PageResult<AgentCardBasicInfo>> ListAgentCardsAsync(
+        string? agentName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNo < 1) pageNo = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var request = new AgentListRequest
+        {
+            Namespace = _namespaceId,
+            AgentName = agentName,
+            Search = search,
+            PageNo = pageNo,
+            PageSize = pageSize
+        };
+
+        var response = await _grpcClient.RequestAsync<AgentListResponse>(
+            "AgentListRequest", request, cancellationToken);
+
+        if (response == null)
+        {
+            return PageResult<AgentCardBasicInfo>.Empty(pageNo, pageSize);
+        }
+
+        return PageResult<AgentCardBasicInfo>.FromItems(
+            response.AgentCards ?? new List<AgentCardBasicInfo>(),
+            response.TotalCount,
+            pageNo,
+            pageSize);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<string>> ListAgentVersionsAsync(string agentName, CancellationToken cancellationToken = default)
+    {
+        ValidateAgentName(agentName);
+
+        var request = new AgentVersionListRequest
+        {
+            Namespace = _namespaceId,
+            AgentName = agentName
+        };
+
+        var response = await _grpcClient.RequestAsync<AgentVersionListResponse>(
+            "AgentVersionListRequest", request, cancellationToken);
+
+        return response?.Versions ?? new List<string>();
     }
 
     #endregion
@@ -735,6 +879,61 @@ public class NacosGrpcAiService : IAiService
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
+    }
+
+    private class McpServerDeleteRequest
+    {
+        public string? Namespace { get; set; }
+        public string McpName { get; set; } = string.Empty;
+        public string? Version { get; set; }
+    }
+
+    private class McpServerListRequest
+    {
+        public string? Namespace { get; set; }
+        public string? McpName { get; set; }
+        public string? Search { get; set; }
+        public int PageNo { get; set; }
+        public int PageSize { get; set; }
+    }
+
+    private class McpServerListResponse
+    {
+        public List<McpServerBasicInfo>? McpServers { get; set; }
+        public int TotalCount { get; set; }
+    }
+
+    private class AgentDeleteRequest
+    {
+        public string? Namespace { get; set; }
+        public string AgentName { get; set; } = string.Empty;
+        public string? Version { get; set; }
+    }
+
+    private class AgentListRequest
+    {
+        public string? Namespace { get; set; }
+        public string? AgentName { get; set; }
+        public string? Search { get; set; }
+        public int PageNo { get; set; }
+        public int PageSize { get; set; }
+    }
+
+    private class AgentListResponse
+    {
+        public List<AgentCardBasicInfo>? AgentCards { get; set; }
+        public int TotalCount { get; set; }
+    }
+
+    private class AgentVersionListRequest
+    {
+        public string? Namespace { get; set; }
+        public string AgentName { get; set; } = string.Empty;
+    }
+
+    private class AgentVersionListResponse
+    {
+        public List<string>? Versions { get; set; }
     }
 
     #endregion

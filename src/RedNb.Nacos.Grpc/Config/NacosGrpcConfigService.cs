@@ -4,6 +4,7 @@ using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Config;
 using RedNb.Nacos.Core.Config.Filter;
 using RedNb.Nacos.Core.Config.FuzzyWatch;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.GrpcClient.Config;
 
@@ -280,7 +281,7 @@ public class NacosGrpcConfigService : IConfigService
         try
         {
             var content = await GetConfigAsync(dataId, group, _options.DefaultTimeout);
-            var md5 = content != null ? Core.Utils.NacosUtils.GetMd5(content) : null;
+            var md5 = content != null ? NacosUtils.GetMd5(content) : null;
 
             var configInfo = new ConfigInfo
             {

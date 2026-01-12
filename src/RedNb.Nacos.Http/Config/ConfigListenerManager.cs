@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using RedNb.Nacos.Core.Config;
-using RedNb.Nacos.Core.Utils;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Config;
 

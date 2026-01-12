@@ -5,7 +5,7 @@ using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Naming;
 using RedNb.Nacos.Core.Naming.FuzzyWatch;
 using RedNb.Nacos.Core.Naming.Selector;
-using RedNb.Nacos.Core.Utils;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Naming;
 

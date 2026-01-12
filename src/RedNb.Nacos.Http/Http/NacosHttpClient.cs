@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using RedNb.Nacos.Core;
-using RedNb.Nacos.Core.Utils;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Http;
 

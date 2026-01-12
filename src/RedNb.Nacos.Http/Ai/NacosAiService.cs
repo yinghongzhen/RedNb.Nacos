@@ -4,8 +4,10 @@ using RedNb.Nacos.Client.Http;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Ai.Listener;
+using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Ai;
 
@@ -129,7 +131,7 @@ public class NacosAiService : IAiService
             parameters["endpointSpec"] = JsonSerializer.Serialize(endpointSpecification, JsonOptions);
         }
 
-        var body = Core.Utils.NacosUtils.BuildQueryString(parameters);
+        var body = NacosUtils.BuildQueryString(parameters);
         var response = await _httpClient.PostAsync(McpBasePath, null, body, _options.DefaultTimeout, cancellationToken);
 
         var result = JsonSerializer.Deserialize<ApiResult<string>>(response ?? "{}", JsonOptions);
@@ -160,7 +162,7 @@ public class NacosAiService : IAiService
             { "type", "register" }
         };
 
-        var body = Core.Utils.NacosUtils.BuildQueryString(parameters);
+        var body = NacosUtils.BuildQueryString(parameters);
         await _httpClient.PostAsync($"{McpBasePath}/endpoint", null, body, _options.DefaultTimeout, cancellationToken);
     }
 
@@ -253,6 +255,75 @@ public class NacosAiService : IAiService
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
+    public async Task DeleteMcpServerAsync(string mcpName, string? version = null, CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+
+        _logger?.LogInformation("Deleting MCP server {McpName}@{Version}", mcpName, version ?? "all");
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "version", version }
+        };
+
+        await _httpClient.DeleteAsync(McpBasePath, parameters, _options.DefaultTimeout, cancellationToken);
+
+        // Remove from cache
+        _cacheHolder.RemoveMcpServer(mcpName, version);
+
+        _logger?.LogInformation("Deleted MCP server {McpName}@{Version}", mcpName, version ?? "all");
+    }
+
+    /// <inheritdoc />
+    public async Task<PageResult<McpServerBasicInfo>> ListMcpServersAsync(
+        string? mcpName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNo < 1) pageNo = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "search", search },
+            { "pageNo", pageNo.ToString() },
+            { "pageSize", pageSize.ToString() }
+        };
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{McpBasePath}/list", parameters, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return PageResult<McpServerBasicInfo>.Empty(pageNo, pageSize);
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<PagedData<McpServerBasicInfo>>>(response, JsonOptions);
+            if (result?.Data == null)
+            {
+                return PageResult<McpServerBasicInfo>.Empty(pageNo, pageSize);
+            }
+
+            return PageResult<McpServerBasicInfo>.FromItems(
+                result.Data.PageItems ?? new List<McpServerBasicInfo>(),
+                result.Data.TotalCount,
+                pageNo,
+                pageSize);
+        }
+        catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
+        {
+            return PageResult<McpServerBasicInfo>.Empty(pageNo, pageSize);
+        }
+    }
+
     #endregion
 
     #region Agent Card Operations
@@ -337,7 +408,7 @@ public class NacosAiService : IAiService
             { "agentCard", JsonSerializer.Serialize(agentCard, JsonOptions) }
         };
 
-        var body = Core.Utils.NacosUtils.BuildQueryString(parameters);
+        var body = NacosUtils.BuildQueryString(parameters);
         await _httpClient.PostAsync(A2aBasePath, null, body, _options.DefaultTimeout, cancellationToken);
     }
 
@@ -380,7 +451,7 @@ public class NacosAiService : IAiService
             { "endpoint", JsonSerializer.Serialize(endpoint, JsonOptions) }
         };
 
-        var body = Core.Utils.NacosUtils.BuildQueryString(parameters);
+        var body = NacosUtils.BuildQueryString(parameters);
         await _httpClient.PostAsync($"{A2aBasePath}/endpoint", null, body, _options.DefaultTimeout, cancellationToken);
     }
 
@@ -416,7 +487,7 @@ public class NacosAiService : IAiService
             { "endpoints", JsonSerializer.Serialize(endpointList, JsonOptions) }
         };
 
-        var body = Core.Utils.NacosUtils.BuildQueryString(parameters);
+        var body = NacosUtils.BuildQueryString(parameters);
         await _httpClient.PostAsync($"{A2aBasePath}/endpoints", null, body, _options.DefaultTimeout, cancellationToken);
     }
 
@@ -522,6 +593,103 @@ public class NacosAiService : IAiService
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAgentAsync(string agentName, string? version = null, CancellationToken cancellationToken = default)
+    {
+        ValidateAgentName(agentName);
+
+        _logger?.LogInformation("Deleting Agent {AgentName}@{Version}", agentName, version ?? "all");
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "agentName", agentName },
+            { "version", version }
+        };
+
+        await _httpClient.DeleteAsync(A2aBasePath, parameters, _options.DefaultTimeout, cancellationToken);
+
+        // Remove from cache
+        _cacheHolder.RemoveAgentCard(agentName, version);
+
+        _logger?.LogInformation("Deleted Agent {AgentName}@{Version}", agentName, version ?? "all");
+    }
+
+    /// <inheritdoc />
+    public async Task<PageResult<AgentCardBasicInfo>> ListAgentCardsAsync(
+        string? agentName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNo < 1) pageNo = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "agentName", agentName },
+            { "search", search },
+            { "pageNo", pageNo.ToString() },
+            { "pageSize", pageSize.ToString() }
+        };
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{A2aBasePath}/list", parameters, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return PageResult<AgentCardBasicInfo>.Empty(pageNo, pageSize);
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<PagedData<AgentCardBasicInfo>>>(response, JsonOptions);
+            if (result?.Data == null)
+            {
+                return PageResult<AgentCardBasicInfo>.Empty(pageNo, pageSize);
+            }
+
+            return PageResult<AgentCardBasicInfo>.FromItems(
+                result.Data.PageItems ?? new List<AgentCardBasicInfo>(),
+                result.Data.TotalCount,
+                pageNo,
+                pageSize);
+        }
+        catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
+        {
+            return PageResult<AgentCardBasicInfo>.Empty(pageNo, pageSize);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<List<string>> ListAgentVersionsAsync(string agentName, CancellationToken cancellationToken = default)
+    {
+        ValidateAgentName(agentName);
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "agentName", agentName }
+        };
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{A2aBasePath}/versions", parameters, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return new List<string>();
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<List<string>>>(response, JsonOptions);
+            return result?.Data ?? new List<string>();
+        }
+        catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
+        {
+            return new List<string>();
+        }
     }
 
     #endregion
@@ -710,5 +878,14 @@ public class NacosAiService : IAiService
         public int Code { get; set; }
         public string? Message { get; set; }
         public T? Data { get; set; }
+    }
+
+    /// <summary>
+    /// Paged data from API response.
+    /// </summary>
+    private class PagedData<T>
+    {
+        public int TotalCount { get; set; }
+        public List<T>? PageItems { get; set; }
     }
 }

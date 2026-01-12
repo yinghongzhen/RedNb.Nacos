@@ -1,4 +1,5 @@
 using RedNb.Nacos.Core.Ai.Listener;
+using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 
 namespace RedNb.Nacos.Core.Ai;
@@ -159,6 +160,42 @@ public interface IA2aService
     /// <param name="listener">Callback listener for agent card changes.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task UnsubscribeAgentCardAsync(string agentName, string? version, AbstractNacosAgentCardListener listener, CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region Agent Card Management
+
+    /// <summary>
+    /// Deletes an agent card.
+    /// </summary>
+    /// <param name="agentName">Name of the agent to delete.</param>
+    /// <param name="version">Version to delete (null to delete all versions).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task DeleteAgentAsync(string agentName, string? version = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists agent cards with pagination.
+    /// </summary>
+    /// <param name="agentName">Optional agent name filter.</param>
+    /// <param name="search">Optional search keyword.</param>
+    /// <param name="pageNo">Page number (1-based).</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Paged list of agent cards.</returns>
+    Task<PageResult<AgentCardBasicInfo>> ListAgentCardsAsync(
+        string? agentName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all versions of an agent card.
+    /// </summary>
+    /// <param name="agentName">Name of the agent.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of version strings.</returns>
+    Task<List<string>> ListAgentVersionsAsync(string agentName, CancellationToken cancellationToken = default);
 
     #endregion
 }

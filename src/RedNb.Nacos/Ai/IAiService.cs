@@ -1,4 +1,5 @@
 using RedNb.Nacos.Core.Ai.Listener;
+using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
 
 namespace RedNb.Nacos.Core.Ai;
@@ -118,6 +119,34 @@ public interface IAiService : IA2aService, IAsyncDisposable
     /// <param name="listener">Callback listener for MCP server changes.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task UnsubscribeMcpServerAsync(string mcpName, string? version, AbstractNacosMcpServerListener listener, CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region MCP Server Management
+
+    /// <summary>
+    /// Deletes an MCP server.
+    /// </summary>
+    /// <param name="mcpName">Name of the MCP server to delete.</param>
+    /// <param name="version">Version to delete (null to delete all versions).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task DeleteMcpServerAsync(string mcpName, string? version = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists MCP servers with pagination.
+    /// </summary>
+    /// <param name="mcpName">Optional MCP server name filter.</param>
+    /// <param name="search">Optional search keyword.</param>
+    /// <param name="pageNo">Page number (1-based).</param>
+    /// <param name="pageSize">Number of items per page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Paged list of MCP servers.</returns>
+    Task<PageResult<McpServerBasicInfo>> ListMcpServersAsync(
+        string? mcpName = null,
+        string? search = null,
+        int pageNo = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
 
     #endregion
 

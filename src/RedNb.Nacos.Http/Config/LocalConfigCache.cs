@@ -1,5 +1,5 @@
 using RedNb.Nacos.Core;
-using RedNb.Nacos.Core.Utils;
+using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Config;
 
