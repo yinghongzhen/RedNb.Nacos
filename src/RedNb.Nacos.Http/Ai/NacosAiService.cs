@@ -7,6 +7,8 @@ using RedNb.Nacos.Core.Ai.Listener;
 using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Import;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Validation;
 using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Ai;
@@ -321,6 +323,232 @@ public class NacosAiService : IAiService
         catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
         {
             return PageResult<McpServerBasicInfo>.Empty(pageNo, pageSize);
+        }
+    }
+
+    #endregion
+
+    #region MCP Server Import/Validation
+
+    /// <inheritdoc />
+    public async Task<McpServerImportValidationResult> ValidateImportAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            throw new NacosException(NacosException.InvalidParam, "request is required");
+        }
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "importType", request.ImportType.ToString().ToLowerInvariant() },
+            { "importData", request.ImportData },
+            { "overrideExisting", request.OverrideExisting.ToString().ToLowerInvariant() }
+        };
+
+        var body = NacosUtils.BuildQueryString(parameters);
+
+        try
+        {
+            var response = await _httpClient.PostAsync($"{McpBasePath}/import/validate", null, body, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return McpServerImportValidationResult.Failed(new List<string> { "Failed to get validation response from server" });
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<McpServerImportValidationResult>>(response, JsonOptions);
+            return result?.Data ?? McpServerImportValidationResult.Failed(new List<string> { "Invalid response from server" });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error validating MCP import");
+            return McpServerImportValidationResult.Failed(new List<string> { ex.Message });
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<McpServerImportResponse> ImportMcpServersAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            throw new NacosException(NacosException.InvalidParam, "request is required");
+        }
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "importType", request.ImportType.ToString().ToLowerInvariant() },
+            { "importData", request.ImportData },
+            { "overrideExisting", request.OverrideExisting.ToString().ToLowerInvariant() },
+            { "validateOnly", request.ValidateOnly.ToString().ToLowerInvariant() },
+            { "skipInvalid", request.SkipInvalid.ToString().ToLowerInvariant() }
+        };
+
+        if (request.SelectedServers != null && request.SelectedServers.Length > 0)
+        {
+            parameters["selectedServers"] = JsonSerializer.Serialize(request.SelectedServers, JsonOptions);
+        }
+
+        var body = NacosUtils.BuildQueryString(parameters);
+
+        try
+        {
+            var response = await _httpClient.PostAsync($"{McpBasePath}/import", null, body, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return McpServerImportResponse.Error("Failed to get import response from server");
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<McpServerImportResponse>>(response, JsonOptions);
+            return result?.Data ?? McpServerImportResponse.Error("Invalid response from server");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error importing MCP servers");
+            return McpServerImportResponse.Error(ex.Message);
+        }
+    }
+
+    #endregion
+
+    #region MCP Tool Management
+
+    /// <inheritdoc />
+    public async Task<McpToolSpec?> RefreshMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "toolName", toolName },
+            { "version", version }
+        };
+
+        var body = NacosUtils.BuildQueryString(parameters);
+
+        try
+        {
+            var response = await _httpClient.PostAsync($"{McpBasePath}/tool/refresh", null, body, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return null;
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<McpToolSpec>>(response, JsonOptions);
+            return result?.Data;
+        }
+        catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<McpToolSpec?> GetMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "toolName", toolName },
+            { "version", version }
+        };
+
+        try
+        {
+            var response = await _httpClient.GetAsync($"{McpBasePath}/tool", parameters, _options.DefaultTimeout, cancellationToken);
+            if (string.IsNullOrEmpty(response))
+            {
+                return null;
+            }
+
+            var result = JsonSerializer.Deserialize<ApiResult<McpToolSpec>>(response, JsonOptions);
+            return result?.Data;
+        }
+        catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        _logger?.LogInformation("Deleting MCP tool {ToolName} from {McpName}@{Version}", toolName, mcpName, version ?? "latest");
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "toolName", toolName },
+            { "version", version }
+        };
+
+        await _httpClient.DeleteAsync($"{McpBasePath}/tool", parameters, _options.DefaultTimeout, cancellationToken);
+
+        _logger?.LogInformation("Deleted MCP tool {ToolName} from {McpName}@{Version}", toolName, mcpName, version ?? "latest");
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateMcpToolAsync(
+        string mcpName,
+        McpToolSpec toolSpec,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        if (toolSpec == null)
+        {
+            throw new NacosException(NacosException.InvalidParam, "toolSpec is required");
+        }
+        ValidateToolName(toolSpec.Name);
+
+        _logger?.LogInformation("Updating MCP tool {ToolName} in {McpName}@{Version}", toolSpec.Name, mcpName, version ?? "latest");
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "namespaceId", _namespaceId },
+            { "mcpName", mcpName },
+            { "version", version },
+            { "toolSpec", JsonSerializer.Serialize(toolSpec, JsonOptions) }
+        };
+
+        var body = NacosUtils.BuildQueryString(parameters);
+        await _httpClient.PutAsync($"{McpBasePath}/tool", null, body, _options.DefaultTimeout, cancellationToken);
+
+        _logger?.LogInformation("Updated MCP tool {ToolName} in {McpName}@{Version}", toolSpec.Name, mcpName, version ?? "latest");
+    }
+
+    private static void ValidateToolName(string toolName)
+    {
+        if (string.IsNullOrWhiteSpace(toolName))
+        {
+            throw new NacosException(NacosException.InvalidParam, "toolName is required");
         }
     }
 

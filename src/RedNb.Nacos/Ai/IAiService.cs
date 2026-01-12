@@ -1,6 +1,8 @@
 using RedNb.Nacos.Core.Ai.Listener;
 using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Import;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Validation;
 
 namespace RedNb.Nacos.Core.Ai;
 
@@ -146,6 +148,88 @@ public interface IAiService : IA2aService, IAsyncDisposable
         string? search = null,
         int pageNo = 1,
         int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region MCP Server Import/Validation
+
+    /// <summary>
+    /// Validates MCP server import data without actually importing.
+    /// </summary>
+    /// <param name="request">Import request with validation-only flag.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Validation result with details about each server.</returns>
+    Task<McpServerImportValidationResult> ValidateImportAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Imports MCP servers from external data sources.
+    /// </summary>
+    /// <param name="request">Import request containing source data and options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Import response with results for each server.</returns>
+    Task<McpServerImportResponse> ImportMcpServersAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region MCP Tool Management
+
+    /// <summary>
+    /// Refreshes a specific MCP tool from the server.
+    /// </summary>
+    /// <param name="mcpName">Name of the MCP server.</param>
+    /// <param name="toolName">Name of the tool to refresh.</param>
+    /// <param name="version">Version of the MCP server (null for latest).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Refreshed tool specification.</returns>
+    Task<McpToolSpec?> RefreshMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a specific MCP tool specification.
+    /// </summary>
+    /// <param name="mcpName">Name of the MCP server.</param>
+    /// <param name="toolName">Name of the tool.</param>
+    /// <param name="version">Version of the MCP server (null for latest).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Tool specification if found.</returns>
+    Task<McpToolSpec?> GetMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a specific MCP tool.
+    /// </summary>
+    /// <param name="mcpName">Name of the MCP server.</param>
+    /// <param name="toolName">Name of the tool to delete.</param>
+    /// <param name="version">Version of the MCP server (null for latest).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task DeleteMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates a specific MCP tool.
+    /// </summary>
+    /// <param name="mcpName">Name of the MCP server.</param>
+    /// <param name="toolSpec">Updated tool specification.</param>
+    /// <param name="version">Version of the MCP server (null for latest).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task UpdateMcpToolAsync(
+        string mcpName,
+        McpToolSpec toolSpec,
+        string? version = null,
         CancellationToken cancellationToken = default);
 
     #endregion

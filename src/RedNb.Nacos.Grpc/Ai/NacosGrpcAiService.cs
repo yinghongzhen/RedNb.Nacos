@@ -7,6 +7,8 @@ using RedNb.Nacos.Core.Ai.Listener;
 using RedNb.Nacos.Core.Ai.Model;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Import;
+using RedNb.Nacos.Core.Ai.Model.Mcp.Validation;
 
 namespace RedNb.Nacos.GrpcClient.Ai;
 
@@ -298,6 +300,195 @@ public class NacosGrpcAiService : IAiService
             response.TotalCount,
             pageNo,
             pageSize);
+    }
+
+    #endregion
+
+    #region MCP Server Import/Validation
+
+    /// <inheritdoc />
+    public async Task<McpServerImportValidationResult> ValidateImportAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+            throw new NacosException(NacosException.InvalidParam, "request is required");
+
+        var grpcRequest = new McpServerValidateImportRequest
+        {
+            Namespace = _namespaceId,
+            ImportType = request.ImportType.ToString().ToLowerInvariant(),
+            ImportData = request.ImportData,
+            OverrideExisting = request.OverrideExisting
+        };
+
+        var response = await _grpcClient.RequestAsync<McpServerValidateImportResponse>(
+            "McpServerValidateImportRequest", grpcRequest, cancellationToken);
+
+        if (response == null)
+        {
+            return McpServerImportValidationResult.Failed(new List<string> { "Failed to get validation response from server" });
+        }
+
+        return new McpServerImportValidationResult
+        {
+            IsValid = response.IsValid,
+            Errors = response.Errors ?? new List<string>(),
+            Servers = response.Servers ?? new List<McpServerValidationItem>(),
+            ValidCount = response.ValidCount,
+            InvalidCount = response.InvalidCount,
+            DuplicateCount = response.DuplicateCount
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<McpServerImportResponse> ImportMcpServersAsync(
+        McpServerImportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+            throw new NacosException(NacosException.InvalidParam, "request is required");
+
+        var grpcRequest = new McpServerImportGrpcRequest
+        {
+            Namespace = _namespaceId,
+            ImportType = request.ImportType.ToString().ToLowerInvariant(),
+            ImportData = request.ImportData,
+            OverrideExisting = request.OverrideExisting,
+            ValidateOnly = request.ValidateOnly,
+            SkipInvalid = request.SkipInvalid,
+            SelectedServers = request.SelectedServers?.ToList()
+        };
+
+        var response = await _grpcClient.RequestAsync<McpServerImportGrpcResponse>(
+            "McpServerImportRequest", grpcRequest, cancellationToken);
+
+        if (response == null)
+        {
+            return McpServerImportResponse.Error("Failed to get import response from server");
+        }
+
+        return new McpServerImportResponse
+        {
+            Success = response.Success,
+            TotalCount = response.TotalCount,
+            SuccessCount = response.SuccessCount,
+            FailedCount = response.FailedCount,
+            SkippedCount = response.SkippedCount,
+            Results = response.Results ?? new List<McpServerImportResult>()
+        };
+    }
+
+    #endregion
+
+    #region MCP Tool Management
+
+    /// <inheritdoc />
+    public async Task<McpToolSpec?> RefreshMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        var request = new McpToolRefreshRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            ToolName = toolName,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<McpToolQueryResponse>(
+            "McpToolRefreshRequest", request, cancellationToken);
+
+        return response?.Tool;
+    }
+
+    /// <inheritdoc />
+    public async Task<McpToolSpec?> GetMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        var request = new McpToolQueryRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            ToolName = toolName,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<McpToolQueryResponse>(
+            "McpToolQueryRequest", request, cancellationToken);
+
+        return response?.Tool;
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteMcpToolAsync(
+        string mcpName,
+        string toolName,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        ValidateToolName(toolName);
+
+        var request = new McpToolDeleteRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            ToolName = toolName,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<OperationResponse>(
+            "McpToolDeleteRequest", request, cancellationToken);
+
+        if (response?.Success != true)
+        {
+            throw new NacosException(NacosException.ServerError, response?.Message ?? "Failed to delete MCP tool");
+        }
+
+        _logger?.LogInformation("Deleted MCP tool {ToolName} from {McpName}@{Version}", toolName, mcpName, version ?? "latest");
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateMcpToolAsync(
+        string mcpName,
+        McpToolSpec toolSpec,
+        string? version = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMcpName(mcpName);
+        if (toolSpec == null)
+            throw new NacosException(NacosException.InvalidParam, "toolSpec is required");
+        ValidateToolName(toolSpec.Name);
+
+        var request = new McpToolUpdateRequest
+        {
+            Namespace = _namespaceId,
+            McpName = mcpName,
+            Tool = toolSpec,
+            Version = version
+        };
+
+        var response = await _grpcClient.RequestAsync<OperationResponse>(
+            "McpToolUpdateRequest", request, cancellationToken);
+
+        if (response?.Success != true)
+        {
+            throw new NacosException(NacosException.ServerError, response?.Message ?? "Failed to update MCP tool");
+        }
+
+        _logger?.LogInformation("Updated MCP tool {ToolName} in {McpName}@{Version}", toolSpec.Name, mcpName, version ?? "latest");
     }
 
     #endregion
@@ -738,6 +929,12 @@ public class NacosGrpcAiService : IAiService
             throw new NacosException(NacosException.InvalidParam, "agentName is required");
     }
 
+    private static void ValidateToolName(string toolName)
+    {
+        if (string.IsNullOrWhiteSpace(toolName))
+            throw new NacosException(NacosException.InvalidParam, "toolName is required");
+    }
+
     private static void ValidateEndpoint(string address, int port)
     {
         if (string.IsNullOrWhiteSpace(address))
@@ -934,6 +1131,84 @@ public class NacosGrpcAiService : IAiService
     private class AgentVersionListResponse
     {
         public List<string>? Versions { get; set; }
+    }
+
+    // Import/Validation Request/Response Models
+    private class McpServerValidateImportRequest
+    {
+        public string? Namespace { get; set; }
+        public string ImportType { get; set; } = string.Empty;
+        public string? ImportData { get; set; }
+        public bool OverrideExisting { get; set; }
+    }
+
+    private class McpServerValidateImportResponse
+    {
+        public bool IsValid { get; set; }
+        public List<string>? Errors { get; set; }
+        public List<McpServerValidationItem>? Servers { get; set; }
+        public int ValidCount { get; set; }
+        public int InvalidCount { get; set; }
+        public int DuplicateCount { get; set; }
+    }
+
+    private class McpServerImportGrpcRequest
+    {
+        public string? Namespace { get; set; }
+        public string ImportType { get; set; } = string.Empty;
+        public string? ImportData { get; set; }
+        public bool OverrideExisting { get; set; }
+        public bool ValidateOnly { get; set; }
+        public bool SkipInvalid { get; set; }
+        public List<string>? SelectedServers { get; set; }
+    }
+
+    private class McpServerImportGrpcResponse
+    {
+        public bool Success { get; set; }
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public int SkippedCount { get; set; }
+        public List<McpServerImportResult>? Results { get; set; }
+    }
+
+    // Tool Management Request/Response Models
+    private class McpToolRefreshRequest
+    {
+        public string? Namespace { get; set; }
+        public string McpName { get; set; } = string.Empty;
+        public string ToolName { get; set; } = string.Empty;
+        public string? Version { get; set; }
+    }
+
+    private class McpToolQueryRequest
+    {
+        public string? Namespace { get; set; }
+        public string McpName { get; set; } = string.Empty;
+        public string ToolName { get; set; } = string.Empty;
+        public string? Version { get; set; }
+    }
+
+    private class McpToolQueryResponse
+    {
+        public McpToolSpec? Tool { get; set; }
+    }
+
+    private class McpToolDeleteRequest
+    {
+        public string? Namespace { get; set; }
+        public string McpName { get; set; } = string.Empty;
+        public string ToolName { get; set; } = string.Empty;
+        public string? Version { get; set; }
+    }
+
+    private class McpToolUpdateRequest
+    {
+        public string? Namespace { get; set; }
+        public string McpName { get; set; } = string.Empty;
+        public McpToolSpec? Tool { get; set; }
+        public string? Version { get; set; }
     }
 
     #endregion
