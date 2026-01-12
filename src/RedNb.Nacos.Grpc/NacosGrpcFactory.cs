@@ -3,7 +3,12 @@ using Microsoft.Extensions.Logging;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Config;
+using RedNb.Nacos.Core.Lock;
+using RedNb.Nacos.Core.Maintainer;
 using RedNb.Nacos.Core.Naming;
+using RedNb.Nacos.Grpc.Lock;
+using RedNb.Nacos.Grpc.Maintainer;
+using RedNb.Nacos.GrpcClient.Ai;
 using RedNb.Nacos.GrpcClient.Config;
 using RedNb.Nacos.GrpcClient.Naming;
 
@@ -68,6 +73,68 @@ public class NacosGrpcFactory : INacosFactory
         return service;
     }
 
+    /// <summary>
+    /// Creates an AI service using gRPC asynchronously.
+    /// </summary>
+    public static async Task<IAiService> CreateAiServiceAsync(NacosClientOptions options)
+    {
+        var service = new NacosGrpcAiService(options);
+        await service.InitializeAsync();
+        return service;
+    }
+
+    /// <summary>
+    /// Creates an AI service using gRPC with a logger asynchronously.
+    /// </summary>
+    public static async Task<IAiService> CreateAiServiceAsync(
+        NacosClientOptions options,
+        ILogger<NacosGrpcAiService> logger)
+    {
+        var service = new NacosGrpcAiService(options, logger);
+        await service.InitializeAsync();
+        return service;
+    }
+
+    /// <summary>
+    /// Creates a lock service using gRPC asynchronously.
+    /// </summary>
+    public static async Task<ILockService> CreateLockServiceAsync(NacosClientOptions options)
+    {
+        var service = new NacosGrpcLockService(options);
+        await service.InitializeAsync();
+        return service;
+    }
+
+    /// <summary>
+    /// Creates a lock service using gRPC with a logger asynchronously.
+    /// </summary>
+    public static async Task<ILockService> CreateLockServiceAsync(
+        NacosClientOptions options,
+        ILogger<NacosGrpcLockService> logger)
+    {
+        var service = new NacosGrpcLockService(options, logger);
+        await service.InitializeAsync();
+        return service;
+    }
+
+    /// <summary>
+    /// Creates a maintainer service (uses HTTP as MaintainerService is HTTP-only).
+    /// </summary>
+    public static IMaintainerService CreateMaintainerServiceStatic(NacosClientOptions options)
+    {
+        return new NacosGrpcMaintainerService(options);
+    }
+
+    /// <summary>
+    /// Creates a maintainer service with a logger (uses HTTP as MaintainerService is HTTP-only).
+    /// </summary>
+    public static IMaintainerService CreateMaintainerServiceStatic(
+        NacosClientOptions options,
+        ILogger<NacosGrpcMaintainerService> logger)
+    {
+        return new NacosGrpcMaintainerService(options, logger);
+    }
+
     /// <inheritdoc/>
     public IConfigService CreateConfigService(NacosClientOptions options)
     {
@@ -101,27 +168,49 @@ public class NacosGrpcFactory : INacosFactory
     }
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// AI Service is not currently supported for gRPC transport.
-    /// Please use the HTTP factory instead.
-    /// </remarks>
     public IAiService CreateAiService(NacosClientOptions options)
     {
-        throw new NotSupportedException(
-            "AI Service is not supported for gRPC transport. " +
-            "Please use NacosFactory from RedNb.Nacos.Http package instead.");
+        var logger = _serviceProvider?.GetService<ILogger<NacosGrpcAiService>>();
+        var service = new NacosGrpcAiService(options, logger);
+        // Note: Must call InitializeAsync before use for gRPC connection
+        return service;
     }
 
     /// <inheritdoc/>
-    /// <remarks>
-    /// AI Service is not currently supported for gRPC transport.
-    /// Please use the HTTP factory instead.
-    /// </remarks>
     public IAiService CreateAiService(string serverAddr)
     {
-        throw new NotSupportedException(
-            "AI Service is not supported for gRPC transport. " +
-            "Please use NacosFactory from RedNb.Nacos.Http package instead.");
+        var options = new NacosClientOptions { ServerAddresses = serverAddr };
+        return CreateAiService(options);
+    }
+
+    /// <inheritdoc/>
+    public ILockService CreateLockService(NacosClientOptions options)
+    {
+        var logger = _serviceProvider?.GetService<ILogger<NacosGrpcLockService>>();
+        var service = new NacosGrpcLockService(options, logger);
+        // Note: Must call InitializeAsync before use for gRPC connection
+        return service;
+    }
+
+    /// <inheritdoc/>
+    public ILockService CreateLockService(string serverAddr)
+    {
+        var options = new NacosClientOptions { ServerAddresses = serverAddr };
+        return CreateLockService(options);
+    }
+
+    /// <inheritdoc/>
+    public IMaintainerService CreateMaintainerService(NacosClientOptions options)
+    {
+        var logger = _serviceProvider?.GetService<ILogger<NacosGrpcMaintainerService>>();
+        return new NacosGrpcMaintainerService(options, logger);
+    }
+
+    /// <inheritdoc/>
+    public IMaintainerService CreateMaintainerService(string serverAddr)
+    {
+        var options = new NacosClientOptions { ServerAddresses = serverAddr };
+        return CreateMaintainerService(options);
     }
 }
 
@@ -131,7 +220,7 @@ public class NacosGrpcFactory : INacosFactory
 public static class NacosGrpcServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds Nacos gRPC services (config and naming).
+    /// Adds Nacos gRPC services (config, naming, AI, lock, and maintainer).
     /// </summary>
     public static IServiceCollection AddNacosGrpc(
         this IServiceCollection services, 
@@ -151,6 +240,21 @@ public static class NacosGrpcServiceCollectionExtensions
         {
             var logger = sp.GetService<ILogger<NacosGrpcNamingService>>();
             return new NacosGrpcNamingService(options, logger);
+        });
+        services.AddSingleton<IAiService>(sp =>
+        {
+            var logger = sp.GetService<ILogger<NacosGrpcAiService>>();
+            return new NacosGrpcAiService(options, logger);
+        });
+        services.AddSingleton<ILockService>(sp =>
+        {
+            var logger = sp.GetService<ILogger<NacosGrpcLockService>>();
+            return new NacosGrpcLockService(options, logger);
+        });
+        services.AddSingleton<IMaintainerService>(sp =>
+        {
+            var logger = sp.GetService<ILogger<NacosGrpcMaintainerService>>();
+            return new NacosGrpcMaintainerService(options, logger);
         });
 
         return services;
@@ -191,6 +295,46 @@ public static class NacosGrpcServiceCollectionExtensions
         {
             var logger = sp.GetService<ILogger<NacosGrpcNamingService>>();
             return new NacosGrpcNamingService(options, logger);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds Nacos gRPC lock service only.
+    /// </summary>
+    public static IServiceCollection AddNacosGrpcLock(
+        this IServiceCollection services, 
+        Action<NacosClientOptions> configure)
+    {
+        var options = new NacosClientOptions();
+        configure(options);
+
+        services.AddSingleton(options);
+        services.AddSingleton<ILockService>(sp => 
+        {
+            var logger = sp.GetService<ILogger<NacosGrpcLockService>>();
+            return new NacosGrpcLockService(options, logger);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds Nacos maintainer service only.
+    /// </summary>
+    public static IServiceCollection AddNacosGrpcMaintainer(
+        this IServiceCollection services, 
+        Action<NacosClientOptions> configure)
+    {
+        var options = new NacosClientOptions();
+        configure(options);
+
+        services.AddSingleton(options);
+        services.AddSingleton<IMaintainerService>(sp => 
+        {
+            var logger = sp.GetService<ILogger<NacosGrpcMaintainerService>>();
+            return new NacosGrpcMaintainerService(options, logger);
         });
 
         return services;

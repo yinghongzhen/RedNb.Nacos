@@ -4,15 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>preview</LangVersion>
-    <RootNamespace>RedNb.Nacos.AspNetCore</RootNamespace>
-    <AssemblyName>RedNb.Nacos.AspNetCore</AssemblyName>
     <Version>1.0.0</Version>
     <Authors>RedNb</Authors>
     <Description>Nacos .NET SDK ASP.NET Core Integration - Configuration provider, health checks, service discovery and middleware</Description>
     <PackageTags>nacos;service-discovery;config;microservices;aspnetcore;configuration;health-check</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageId>RedNb.Nacos.AspNetCore</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,10 +19,6 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
   </ItemGroup>
 
 </Project>

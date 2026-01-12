@@ -4,6 +4,7 @@ using RedNb.Nacos.Client.Http;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Naming;
 using RedNb.Nacos.Core.Naming.FuzzyWatch;
+using RedNb.Nacos.Core.Naming.Selector;
 using RedNb.Nacos.Core.Utils;
 
 namespace RedNb.Nacos.Client.Naming;
@@ -21,6 +22,7 @@ public class NacosNamingService : INamingService
     private readonly BeatReactor _beatReactor;
     private readonly NamingFuzzyWatchManager _fuzzyWatchManager;
     private readonly CancellationTokenSource _cts;
+    private readonly Dictionary<string, Action<IInstancesChangeEvent>> _selectorListeners = new();
     private bool _disposed;
     private bool _isHealthy = true;
 
@@ -408,6 +410,59 @@ public class NacosNamingService : INamingService
         _logger?.LogDebug("Subscribed to service {Service}@{Group}", serviceName, groupName);
     }
 
+    public Task SubscribeAsync(string serviceName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        return SubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
+    }
+
+    public async Task SubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        groupName = GetGroupOrDefault(groupName);
+        var selectorKey = selector?.Expression ?? "";
+
+        // Create a filtered listener that applies the selector
+        Action<IInstancesChangeEvent> filteredListener = (evt) =>
+        {
+            if (selector != null)
+            {
+                var context = new NamingContext
+                {
+                    ServiceName = serviceName,
+                    GroupName = groupName,
+                    Instances = evt.Instances,
+                    HealthyOnly = false
+                };
+                var result = selector.Select(context);
+                evt = new InstancesChangeEvent
+                {
+                    ServiceName = evt.ServiceName,
+                    GroupName = evt.GroupName,
+                    Clusters = evt.Clusters,
+                    Instances = result.Instances,
+                    AddedInstances = evt.AddedInstances?.Where(i => result.Instances.Contains(i)).ToList(),
+                    RemovedInstances = evt.RemovedInstances,
+                    ModifiedInstances = evt.ModifiedInstances?.Where(i => result.Instances.Contains(i)).ToList()
+                };
+            }
+            listener(evt);
+        };
+
+        _changeNotifier.RegisterListener(serviceName, groupName, selectorKey, filteredListener);
+        _selectorListeners[$"{serviceName}@@{groupName}@@{listener.GetHashCode()}"] = filteredListener;
+
+        // Ensure service is being polled
+        var serviceInfo = await QueryServiceAsync(serviceName, groupName, "", cancellationToken);
+        if (serviceInfo != null)
+        {
+            _serviceInfoHolder.ProcessServiceInfo(serviceInfo);
+        }
+
+        _logger?.LogDebug("Subscribed to service {Service}@{Group} with selector {Selector}", 
+            serviceName, groupName, selector?.Expression);
+    }
+
     public Task UnsubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener, 
         CancellationToken cancellationToken = default)
     {
@@ -439,6 +494,30 @@ public class NacosNamingService : INamingService
         return Task.CompletedTask;
     }
 
+    public Task UnsubscribeAsync(string serviceName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        return UnsubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
+    }
+
+    public Task UnsubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        groupName = GetGroupOrDefault(groupName);
+        var selectorKey = selector?.Expression ?? "";
+        var listenerKey = $"{serviceName}@@{groupName}@@{listener.GetHashCode()}";
+
+        if (_selectorListeners.TryGetValue(listenerKey, out var filteredListener))
+        {
+            _changeNotifier.DeregisterListener(serviceName, groupName, selectorKey, filteredListener);
+            _selectorListeners.Remove(listenerKey);
+        }
+
+        _logger?.LogDebug("Unsubscribed from service {Service}@{Group} with selector", serviceName, groupName);
+        
+        return Task.CompletedTask;
+    }
+
     #endregion
 
     #region Service List
@@ -461,6 +540,47 @@ public class NacosNamingService : INamingService
             { "groupName", groupName },
             { "namespaceId", GetNamespace() }
         };
+
+        var response = await _httpClient.GetAsync(ServiceApiPath, parameters, 
+            _options.DefaultTimeout, cancellationToken);
+
+        if (string.IsNullOrEmpty(response))
+        {
+            return new ListView<string>();
+        }
+
+        var result = JsonSerializer.Deserialize<ServiceListResponse>(response);
+        return new ListView<string>(result?.Count ?? 0, result?.Doms ?? new List<string>());
+    }
+
+    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, INamingSelector selector, 
+        CancellationToken cancellationToken = default)
+    {
+        return GetServicesOfServerAsync(pageNo, pageSize, NacosConstants.DefaultGroup, selector, cancellationToken);
+    }
+
+    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, 
+        INamingSelector selector, CancellationToken cancellationToken = default)
+    {
+        groupName = GetGroupOrDefault(groupName);
+
+        var parameters = new Dictionary<string, string?>
+        {
+            { "pageNo", pageNo.ToString() },
+            { "pageSize", pageSize.ToString() },
+            { "groupName", groupName },
+            { "namespaceId", GetNamespace() }
+        };
+
+        // Add selector parameters if provided
+        if (selector != null)
+        {
+            parameters["selector"] = JsonSerializer.Serialize(new
+            {
+                type = selector.Type,
+                expression = selector.Expression
+            });
+        }
 
         var response = await _httpClient.GetAsync(ServiceApiPath, parameters, 
             _options.DefaultTimeout, cancellationToken);

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Naming;
 using RedNb.Nacos.Core.Naming.FuzzyWatch;
+using RedNb.Nacos.Core.Naming.Selector;
 
 namespace RedNb.Nacos.GrpcClient.Naming;
 
@@ -14,7 +15,10 @@ public class NacosGrpcNamingService : INamingService
     private readonly NacosGrpcClient _grpcClient;
     private readonly ILogger<NacosGrpcNamingService>? _logger;
     private readonly Dictionary<string, List<Action<IInstancesChangeEvent>>> _subscribeCallbacks = new();
+    private readonly Dictionary<string, Action<IInstancesChangeEvent>> _selectorListeners = new();
+    private readonly Dictionary<string, List<FuzzyWatchEntry>> _fuzzyWatchers = new();
     private readonly object _subscribeLock = new();
+    private readonly object _fuzzyLock = new();
     private bool _disposed;
     private bool _isHealthy;
 
@@ -516,6 +520,73 @@ public class NacosGrpcNamingService : INamingService
     }
 
     /// <inheritdoc/>
+    public Task SubscribeAsync(string serviceName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        return SubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task SubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        var key = GetServiceKey(serviceName, groupName);
+        var listenerKey = $"{serviceName}@@{groupName}@@{listener.GetHashCode()}";
+
+        // Create a filtered listener that applies the selector
+        Action<IInstancesChangeEvent> filteredListener = (evt) =>
+        {
+            if (selector != null)
+            {
+                var context = new NamingContext
+                {
+                    ServiceName = serviceName,
+                    GroupName = groupName,
+                    Instances = evt.Instances,
+                    HealthyOnly = false
+                };
+                var result = selector.Select(context);
+                evt = new GrpcInstancesChangeEvent
+                {
+                    ServiceName = evt.ServiceName,
+                    GroupName = evt.GroupName,
+                    Clusters = evt.Clusters,
+                    Instances = result.Instances,
+                    AddedInstances = evt.AddedInstances?.Where(i => result.Instances.Contains(i)).ToList(),
+                    RemovedInstances = evt.RemovedInstances,
+                    ModifiedInstances = evt.ModifiedInstances?.Where(i => result.Instances.Contains(i)).ToList()
+                };
+            }
+            listener(evt);
+        };
+
+        lock (_subscribeLock)
+        {
+            if (!_subscribeCallbacks.TryGetValue(key, out var listeners))
+            {
+                listeners = new List<Action<IInstancesChangeEvent>>();
+                _subscribeCallbacks[key] = listeners;
+            }
+            listeners.Add(filteredListener);
+            _selectorListeners[listenerKey] = filteredListener;
+        }
+
+        // Send subscribe request
+        var request = new SubscribeServiceRequest
+        {
+            Namespace = GetNamespace(),
+            ServiceName = serviceName,
+            GroupName = groupName,
+            Clusters = "",
+            Subscribe = true
+        };
+
+        await _grpcClient.SendStreamRequestAsync("SubscribeServiceRequest", request);
+
+        _logger?.LogDebug("Subscribed to service {Service}@{Group} with selector", serviceName, groupName);
+    }
+
+    /// <inheritdoc/>
     public Task UnsubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
@@ -558,6 +629,40 @@ public class NacosGrpcNamingService : INamingService
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
+    public Task UnsubscribeAsync(string serviceName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        return UnsubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task UnsubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+        Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
+    {
+        var key = GetServiceKey(serviceName, groupName);
+        var listenerKey = $"{serviceName}@@{groupName}@@{listener.GetHashCode()}";
+
+        lock (_subscribeLock)
+        {
+            if (_selectorListeners.TryGetValue(listenerKey, out var filteredListener))
+            {
+                if (_subscribeCallbacks.TryGetValue(key, out var listeners))
+                {
+                    listeners.Remove(filteredListener);
+                    if (listeners.Count == 0)
+                    {
+                        _subscribeCallbacks.Remove(key);
+                    }
+                }
+                _selectorListeners.Remove(listenerKey);
+            }
+        }
+
+        _logger?.LogDebug("Unsubscribed from service {Service}@{Group} with selector", serviceName, groupName);
+        return Task.CompletedTask;
+    }
+
     #endregion
 
     #region Service List
@@ -579,6 +684,37 @@ public class NacosGrpcNamingService : INamingService
             GroupName = groupName,
             PageNo = pageNo,
             PageSize = pageSize
+        };
+
+        var response = await _grpcClient.RequestAsync<ServiceListResponse>(
+            "ServiceListRequest", request, cancellationToken);
+
+        return new ListView<string>
+        {
+            Count = response?.Count ?? 0,
+            Data = response?.ServiceNames ?? new List<string>()
+        };
+    }
+
+    /// <inheritdoc/>
+    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, INamingSelector selector, 
+        CancellationToken cancellationToken = default)
+    {
+        return GetServicesOfServerAsync(pageNo, pageSize, NacosConstants.DefaultGroup, selector, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, 
+        INamingSelector selector, CancellationToken cancellationToken = default)
+    {
+        var request = new ServiceListWithSelectorRequest
+        {
+            Namespace = GetNamespace(),
+            GroupName = groupName,
+            PageNo = pageNo,
+            PageSize = pageSize,
+            SelectorType = selector?.Type,
+            SelectorExpression = selector?.Expression
         };
 
         var response = await _grpcClient.RequestAsync<ServiceListResponse>(
@@ -632,18 +768,45 @@ public class NacosGrpcNamingService : INamingService
 
     #region Fuzzy Watch
 
-    public Task FuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
+    public async Task FuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
         CancellationToken cancellationToken = default)
     {
-        return FuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
+        await FuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public Task FuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
+    public async Task FuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement fuzzy watch via gRPC stream
-        _logger?.LogWarning("Fuzzy watch is not yet implemented in gRPC client");
-        return Task.CompletedTask;
+        var key = GetFuzzyWatchKey(serviceNamePattern, groupNamePattern);
+
+        lock (_fuzzyLock)
+        {
+            if (!_fuzzyWatchers.TryGetValue(key, out var watchers))
+            {
+                watchers = new List<FuzzyWatchEntry>();
+                _fuzzyWatchers[key] = watchers;
+            }
+            watchers.Add(new FuzzyWatchEntry
+            {
+                ServiceNamePattern = serviceNamePattern,
+                GroupNamePattern = groupNamePattern,
+                Watcher = watcher
+            });
+        }
+
+        // Send fuzzy watch request via gRPC stream
+        var request = new NamingFuzzyWatchRequest
+        {
+            Namespace = GetNamespace(),
+            ServiceNamePattern = serviceNamePattern,
+            GroupNamePattern = groupNamePattern,
+            ReceivedGroupKeys = new List<string>()
+        };
+
+        await _grpcClient.SendStreamRequestAsync("NamingFuzzyWatchRequest", request);
+
+        _logger?.LogDebug("Added fuzzy watch for service={ServicePattern}, group={GroupPattern}", 
+            serviceNamePattern, groupNamePattern);
     }
 
     public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern, 
@@ -652,26 +815,70 @@ public class NacosGrpcNamingService : INamingService
         return FuzzyWatchWithGroupKeysAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern, string groupNamePattern, 
+    public async Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern, string groupNamePattern, 
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement fuzzy watch via gRPC stream
-        _logger?.LogWarning("Fuzzy watch is not yet implemented in gRPC client");
-        return Task.FromResult<ISet<string>>(new HashSet<string>());
+        await FuzzyWatchAsync(serviceNamePattern, groupNamePattern, watcher, cancellationToken);
+
+        // Request current matching keys
+        var request = new NamingFuzzyWatchRequest
+        {
+            Namespace = GetNamespace(),
+            ServiceNamePattern = serviceNamePattern,
+            GroupNamePattern = groupNamePattern,
+            ReceivedGroupKeys = new List<string>()
+        };
+
+        var response = await _grpcClient.RequestAsync<NamingFuzzyWatchResponse>(
+            "NamingFuzzyWatchRequest", request, cancellationToken);
+
+        return new HashSet<string>(response?.MatchedGroupKeys ?? Enumerable.Empty<string>());
     }
 
-    public Task CancelFuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
+    public async Task CancelFuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
         CancellationToken cancellationToken = default)
     {
-        return CancelFuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
+        await CancelFuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public Task CancelFuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
+    public async Task CancelFuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement fuzzy watch via gRPC stream
-        _logger?.LogWarning("Fuzzy watch is not yet implemented in gRPC client");
-        return Task.CompletedTask;
+        var key = GetFuzzyWatchKey(serviceNamePattern, groupNamePattern);
+        var shouldSendCancel = false;
+
+        lock (_fuzzyLock)
+        {
+            if (_fuzzyWatchers.TryGetValue(key, out var watchers))
+            {
+                var entry = watchers.FirstOrDefault(e => e.Watcher == watcher);
+                if (entry != null)
+                {
+                    watchers.Remove(entry);
+                }
+                if (watchers.Count == 0)
+                {
+                    _fuzzyWatchers.Remove(key);
+                    shouldSendCancel = true;
+                }
+            }
+        }
+
+        if (shouldSendCancel)
+        {
+            // Send cancel request via gRPC stream
+            var request = new CancelNamingFuzzyWatchRequest
+            {
+                Namespace = GetNamespace(),
+                ServiceNamePattern = serviceNamePattern,
+                GroupNamePattern = groupNamePattern
+            };
+
+            await _grpcClient.SendStreamRequestAsync("CancelNamingFuzzyWatchRequest", request);
+        }
+
+        _logger?.LogDebug("Cancelled fuzzy watch for service={ServicePattern}, group={GroupPattern}", 
+            serviceNamePattern, groupNamePattern);
     }
 
     #endregion
@@ -693,6 +900,78 @@ public class NacosGrpcNamingService : INamingService
                 _logger?.LogError(ex, "Error handling service change push");
             }
         }
+        else if (type.Contains("NamingFuzzyWatch") || type.Contains("FuzzyWatchNotify"))
+        {
+            try
+            {
+                var notification = System.Text.Json.JsonSerializer.Deserialize<FuzzyWatchNotification>(body);
+                if (notification != null)
+                {
+                    NotifyFuzzyWatchers(notification);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error handling fuzzy watch push");
+            }
+        }
+    }
+
+    private void NotifyFuzzyWatchers(FuzzyWatchNotification notification)
+    {
+        List<FuzzyWatchEntry> matchingWatchers;
+
+        lock (_fuzzyLock)
+        {
+            matchingWatchers = _fuzzyWatchers.Values
+                .SelectMany(w => w)
+                .Where(w => MatchesPattern(notification.ServiceName, w.ServiceNamePattern) &&
+                            MatchesPattern(notification.GroupName, w.GroupNamePattern))
+                .ToList();
+        }
+
+        var changeEvent = new NamingFuzzyWatchChangeEvent(
+            notification.Namespace ?? GetNamespace() ?? "",
+            notification.GroupName,
+            notification.ServiceName,
+            notification.ChangeType,
+            notification.SyncType ?? NamingFuzzyWatchSyncType.ResourceChanged);
+
+        foreach (var entry in matchingWatchers)
+        {
+            try
+            {
+                var scheduler = entry.Watcher.Scheduler;
+                if (scheduler != null)
+                {
+                    Task.Factory.StartNew(() => entry.Watcher.OnEvent(changeEvent),
+                        CancellationToken.None, TaskCreationOptions.None, scheduler);
+                }
+                else
+                {
+                    entry.Watcher.OnEvent(changeEvent);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error notifying fuzzy watcher for {Service}@{Group}",
+                    notification.ServiceName, notification.GroupName);
+            }
+        }
+    }
+
+    private static bool MatchesPattern(string value, string pattern)
+    {
+        if (pattern == "*") return true;
+        if (string.IsNullOrEmpty(pattern)) return true;
+
+        // Simple wildcard matching
+        var regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+
+        return System.Text.RegularExpressions.Regex.IsMatch(value, regexPattern, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 
     private void NotifySubscribers(ServiceChangedNotification notification)
@@ -754,6 +1033,11 @@ public class NacosGrpcNamingService : INamingService
     private static string GetServiceKey(string serviceName, string groupName)
     {
         return $"{groupName}@@{serviceName}";
+    }
+
+    private static string GetFuzzyWatchKey(string serviceNamePattern, string groupNamePattern)
+    {
+        return $"{serviceNamePattern}@@{groupNamePattern}";
     }
 
     private string? GetNamespace()
@@ -833,6 +1117,52 @@ public class NacosGrpcNamingService : INamingService
     {
         public int Count { get; set; }
         public List<string>? ServiceNames { get; set; }
+    }
+
+    private class ServiceListWithSelectorRequest
+    {
+        public string? Namespace { get; set; }
+        public string? GroupName { get; set; }
+        public int PageNo { get; set; }
+        public int PageSize { get; set; }
+        public string? SelectorType { get; set; }
+        public string? SelectorExpression { get; set; }
+    }
+
+    private class NamingFuzzyWatchRequest
+    {
+        public string? Namespace { get; set; }
+        public string ServiceNamePattern { get; set; } = string.Empty;
+        public string GroupNamePattern { get; set; } = "*";
+        public List<string> ReceivedGroupKeys { get; set; } = new();
+    }
+
+    private class NamingFuzzyWatchResponse
+    {
+        public List<string>? MatchedGroupKeys { get; set; }
+    }
+
+    private class CancelNamingFuzzyWatchRequest
+    {
+        public string? Namespace { get; set; }
+        public string ServiceNamePattern { get; set; } = string.Empty;
+        public string GroupNamePattern { get; set; } = "*";
+    }
+
+    private class FuzzyWatchNotification
+    {
+        public string? Namespace { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
+        public string GroupName { get; set; } = string.Empty;
+        public string ChangeType { get; set; } = string.Empty;
+        public string? SyncType { get; set; }
+    }
+
+    private class FuzzyWatchEntry
+    {
+        public string ServiceNamePattern { get; init; } = string.Empty;
+        public string GroupNamePattern { get; init; } = string.Empty;
+        public INamingFuzzyWatchEventWatcher Watcher { get; init; } = null!;
     }
 
     private class InstanceInfo

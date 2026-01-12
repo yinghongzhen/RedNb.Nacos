@@ -5,7 +5,11 @@ using RedNb.Nacos.Client.Naming;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Config;
+using RedNb.Nacos.Core.Lock;
+using RedNb.Nacos.Core.Maintainer;
 using RedNb.Nacos.Core.Naming;
+using RedNb.Nacos.Http.Lock;
+using RedNb.Nacos.Http.Maintainer;
 
 namespace RedNb.Nacos.Client;
 
@@ -76,6 +80,42 @@ public class NacosFactory : INacosFactory
     }
 
     /// <summary>
+    /// Creates a distributed lock service with the specified options.
+    /// </summary>
+    public ILockService CreateLockService(NacosClientOptions options)
+    {
+        options.Validate();
+        var logger = _loggerFactory?.CreateLogger<NacosLockService>();
+        return new NacosLockService(options, logger);
+    }
+
+    /// <summary>
+    /// Creates a distributed lock service with server address.
+    /// </summary>
+    public ILockService CreateLockService(string serverAddr)
+    {
+        return CreateLockService(new NacosClientOptions { ServerAddresses = serverAddr });
+    }
+
+    /// <summary>
+    /// Creates a maintainer service with the specified options.
+    /// </summary>
+    public IMaintainerService CreateMaintainerService(NacosClientOptions options)
+    {
+        options.Validate();
+        var logger = _loggerFactory?.CreateLogger<NacosMaintainerService>();
+        return new NacosMaintainerService(options, logger);
+    }
+
+    /// <summary>
+    /// Creates a maintainer service with server address.
+    /// </summary>
+    public IMaintainerService CreateMaintainerService(string serverAddr)
+    {
+        return CreateMaintainerService(new NacosClientOptions { ServerAddresses = serverAddr });
+    }
+
+    /// <summary>
     /// Creates a config service with the specified options (static method).
     /// </summary>
     public static IConfigService CreateConfigServiceStatic(NacosClientOptions options)
@@ -121,5 +161,37 @@ public class NacosFactory : INacosFactory
     public static IAiService CreateAiServiceStatic(string serverAddr)
     {
         return new NacosFactory().CreateAiService(serverAddr);
+    }
+
+    /// <summary>
+    /// Creates a lock service with the specified options (static method).
+    /// </summary>
+    public static ILockService CreateLockServiceStatic(NacosClientOptions options)
+    {
+        return new NacosFactory().CreateLockService(options);
+    }
+
+    /// <summary>
+    /// Creates a lock service with server address (static method).
+    /// </summary>
+    public static ILockService CreateLockServiceStatic(string serverAddr)
+    {
+        return new NacosFactory().CreateLockService(serverAddr);
+    }
+
+    /// <summary>
+    /// Creates a maintainer service with the specified options (static method).
+    /// </summary>
+    public static IMaintainerService CreateMaintainerServiceStatic(NacosClientOptions options)
+    {
+        return new NacosFactory().CreateMaintainerService(options);
+    }
+
+    /// <summary>
+    /// Creates a maintainer service with server address (static method).
+    /// </summary>
+    public static IMaintainerService CreateMaintainerServiceStatic(string serverAddr)
+    {
+        return new NacosFactory().CreateMaintainerService(serverAddr);
     }
 }

@@ -1,5 +1,7 @@
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Config;
+using RedNb.Nacos.Core.Lock;
+using RedNb.Nacos.Core.Maintainer;
 using RedNb.Nacos.Core.Naming;
 
 namespace RedNb.Nacos.Core;
@@ -50,4 +52,32 @@ public interface INacosFactory
     /// <param name="serverAddr">Server address</param>
     /// <returns>AI service instance</returns>
     IAiService CreateAiService(string serverAddr);
+
+    /// <summary>
+    /// Creates a distributed lock service.
+    /// </summary>
+    /// <param name="options">Client options</param>
+    /// <returns>Lock service instance</returns>
+    ILockService CreateLockService(NacosClientOptions options);
+
+    /// <summary>
+    /// Creates a distributed lock service with server address.
+    /// </summary>
+    /// <param name="serverAddr">Server address</param>
+    /// <returns>Lock service instance</returns>
+    ILockService CreateLockService(string serverAddr);
+
+    /// <summary>
+    /// Creates a maintainer service for service and instance management.
+    /// </summary>
+    /// <param name="options">Client options</param>
+    /// <returns>Maintainer service instance</returns>
+    IMaintainerService CreateMaintainerService(NacosClientOptions options);
+
+    /// <summary>
+    /// Creates a maintainer service with server address.
+    /// </summary>
+    /// <param name="serverAddr">Server address</param>
+    /// <returns>Maintainer service instance</returns>
+    IMaintainerService CreateMaintainerService(string serverAddr);
 }

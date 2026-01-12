@@ -1,4 +1,5 @@
 using RedNb.Nacos.Core.Naming.FuzzyWatch;
+using RedNb.Nacos.Core.Naming.Selector;
 
 namespace RedNb.Nacos.Core.Naming;
 
@@ -232,6 +233,25 @@ public interface INamingService : IAsyncDisposable
     Task SubscribeAsync(string serviceName, string groupName, List<string> clusters, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Subscribes to service with a selector.
+    /// </summary>
+    /// <param name="serviceName">Service name</param>
+    /// <param name="selector">Instance selector</param>
+    /// <param name="listener">Event listener</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task SubscribeAsync(string serviceName, INamingSelector selector, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Subscribes to service with group name and a selector.
+    /// </summary>
+    /// <param name="serviceName">Service name</param>
+    /// <param name="groupName">Group name</param>
+    /// <param name="selector">Instance selector</param>
+    /// <param name="listener">Event listener</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task SubscribeAsync(string serviceName, string groupName, INamingSelector selector, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Unsubscribes from service.
     /// </summary>
     Task UnsubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
@@ -251,6 +271,25 @@ public interface INamingService : IAsyncDisposable
     /// </summary>
     Task UnsubscribeAsync(string serviceName, string groupName, List<string> clusters, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Unsubscribes from service with a selector.
+    /// </summary>
+    /// <param name="serviceName">Service name</param>
+    /// <param name="selector">Instance selector</param>
+    /// <param name="listener">Event listener</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task UnsubscribeAsync(string serviceName, INamingSelector selector, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Unsubscribes from service with group name and a selector.
+    /// </summary>
+    /// <param name="serviceName">Service name</param>
+    /// <param name="groupName">Group name</param>
+    /// <param name="selector">Instance selector</param>
+    /// <param name="listener">Event listener</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task UnsubscribeAsync(string serviceName, string groupName, INamingSelector selector, Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default);
+
     #endregion
 
     #region Service List
@@ -264,6 +303,25 @@ public interface INamingService : IAsyncDisposable
     /// Gets all service names from server with group name.
     /// </summary>
     Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all service names from server with a selector.
+    /// </summary>
+    /// <param name="pageNo">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="selector">Service selector</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, INamingSelector selector, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all service names from server with group name and a selector.
+    /// </summary>
+    /// <param name="pageNo">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="groupName">Group name</param>
+    /// <param name="selector">Service selector</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, INamingSelector selector, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all subscribed services.

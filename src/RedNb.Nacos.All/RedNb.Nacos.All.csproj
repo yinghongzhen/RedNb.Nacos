@@ -4,15 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>preview</LangVersion>
-    <RootNamespace>RedNb.Nacos.All</RootNamespace>
-    <AssemblyName>RedNb.Nacos.All</AssemblyName>
     <Version>1.0.0</Version>
     <Authors>RedNb</Authors>
     <Description>Nacos .NET SDK All-in-One - Meta package that includes all Nacos SDK components for easy installation</Description>
     <PackageTags>nacos;service-discovery;config;microservices;all-in-one</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageId>RedNb.Nacos.All</PackageId>
     <!-- This is a meta package - no source code -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>

@@ -4,21 +4,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>preview</LangVersion>
-    <RootNamespace>RedNb.Nacos</RootNamespace>
-    <AssemblyName>RedNb.Nacos</AssemblyName>
     <Version>1.0.0</Version>
     <Authors>RedNb</Authors>
     <Description>Nacos .NET SDK - Core abstractions, models and interfaces for Nacos client</Description>
     <PackageTags>nacos;service-discovery;config;microservices;abstractions</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageId>RedNb.Nacos</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
   </ItemGroup>
 
 </Project>
