@@ -475,7 +475,7 @@ limitations under the License.
 
 ## 📞 联系方式
 
-- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
+- 📧 Email: [442962355@qq.com](mailto:442962355@qq.com)
 - 💬 Issues: [GitHub Issues](https://github.com/redNb/RedNb.Nacos/issues)
 - 📖 Discussions: [GitHub Discussions](https://github.com/redNb/RedNb.Nacos/discussions)
 
