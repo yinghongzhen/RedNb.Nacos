@@ -1024,7 +1024,7 @@ public class NacosGrpcNamingService : INamingService
             Healthy = info.Healthy,
             Enabled = info.Enabled,
             Ephemeral = info.Ephemeral,
-            ClusterName = info.ClusterName,
+            ClusterName = info.ClusterName ?? NacosConstants.DefaultClusterName,
             ServiceName = info.ServiceName,
             Metadata = info.Metadata ?? new Dictionary<string, string>()
         };

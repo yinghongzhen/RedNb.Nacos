@@ -12,7 +12,7 @@ namespace RedNb.Nacos.Http.Maintainer;
 /// <summary>
 /// HTTP implementation of the Nacos maintainer service.
 /// </summary>
-public class NacosMaintainerService : IMaintainerService
+public partial class NacosMaintainerService : IMaintainerService
 {
     private readonly NacosClientOptions _options;
     private readonly HttpClient _httpClient;
