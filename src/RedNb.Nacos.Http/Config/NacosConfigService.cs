@@ -103,7 +103,7 @@ public class NacosConfigService : IConfigService
         return content;
     }
 
-    public Task AddListenerAsync(string dataId, string group, IConfigChangeListener listener, 
+    public async Task AddListenerAsync(string dataId, string group, IConfigChangeListener listener, 
         CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
@@ -112,7 +112,18 @@ public class NacosConfigService : IConfigService
         _listenerManager.AddListener(dataId, group, GetTenant(), listener);
         _logger?.LogDebug("Added listener for {DataId}@{Group}", dataId, group);
         
-        return Task.CompletedTask;
+        // Initialize MD5 for the listener to enable proper change detection
+        try
+        {
+            var content = await GetConfigAsync(dataId, group, _options.DefaultTimeout, cancellationToken);
+            var md5 = content != null ? NacosUtils.GetMd5(content) : null;
+            _listenerManager.UpdateMd5(dataId, group, GetTenant(), md5);
+            _logger?.LogDebug("Initialized MD5 for {DataId}@{Group}: {Md5}", dataId, group, md5);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to initialize MD5 for {DataId}@{Group}, listener may not detect first change", dataId, group);
+        }
     }
 
     public void RemoveListener(string dataId, string group, IConfigChangeListener listener)
@@ -291,6 +302,9 @@ public class NacosConfigService : IConfigService
     {
         _logger?.LogInformation("Starting config long polling");
 
+        // Wait a bit for initial setup
+        await Task.Delay(100, cancellationToken);
+
         while (!cancellationToken.IsCancellationRequested)
         {
             try
@@ -298,15 +312,24 @@ public class NacosConfigService : IConfigService
                 var listeningConfigs = _listenerManager.GetListeningConfigs();
                 if (listeningConfigs.Count == 0)
                 {
+                    _logger?.LogDebug("No configs to listen, waiting...");
                     await Task.Delay(1000, cancellationToken);
                     continue;
                 }
 
+                _logger?.LogDebug("Long polling for {Count} configs: {Configs}", 
+                    listeningConfigs.Count,
+                    string.Join(", ", listeningConfigs.Select(c => $"{c.DataId}@{c.Group}(md5={c.Md5})")));
+
                 var changedConfigs = await CheckConfigChangesAsync(listeningConfigs, cancellationToken);
                 
-                foreach (var config in changedConfigs)
+                if (changedConfigs.Count > 0)
                 {
-                    await NotifyListenersAsync(config.DataId, config.Group, config.Tenant, cancellationToken);
+                    _logger?.LogInformation("Detected {Count} config changes", changedConfigs.Count);
+                    foreach (var config in changedConfigs)
+                    {
+                        await NotifyListenersAsync(config.DataId, config.Group, config.Tenant, cancellationToken);
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -329,23 +352,52 @@ public class NacosConfigService : IConfigService
         var changedConfigs = new List<ListeningConfig>();
 
         // Build listening configs string
+        // Format (without tenant): dataId\x02group\x02md5\x01
+        // Format (with tenant): dataId\x02group\x02md5\x02tenant\x01
         var listeningConfigsStr = string.Join("", listeningConfigs.Select(c =>
-            $"{c.DataId}\x02{c.Group}\x02{c.Md5 ?? ""}\x02{c.Tenant ?? ""}\x01"));
-
-        var parameters = new Dictionary<string, string?>
         {
-            { "Listening-Configs", listeningConfigsStr }
+            if (string.IsNullOrEmpty(c.Tenant))
+            {
+                // Without tenant
+                return $"{c.DataId}\x02{c.Group}\x02{c.Md5 ?? ""}\x01";
+            }
+            else
+            {
+                // With tenant
+                return $"{c.DataId}\x02{c.Group}\x02{c.Md5 ?? ""}\x02{c.Tenant}\x01";
+            }
+        }));
+
+        // Long polling requires the Listening-Configs parameter in the request body
+        var body = $"Listening-Configs={Uri.EscapeDataString(listeningConfigsStr)}";
+
+        // Set the Long-Pulling-Timeout header (required by Nacos server for long polling)
+        var headers = new Dictionary<string, string>
+        {
+            { "Long-Pulling-Timeout", _options.LongPollTimeout.ToString() }
         };
 
         try
         {
-            var body = NacosUtils.BuildQueryString(parameters);
-            var response = await _httpClient.PostAsync(ListenerApiPath, null, body, 
-                _options.LongPollTimeout, cancellationToken);
+            _logger?.LogDebug("Checking config changes, body: {Body}", body);
+            
+            var response = await _httpClient.PostWithHeadersAsync(
+                ListenerApiPath, 
+                null, 
+                body, 
+                headers,
+                _options.LongPollTimeout + 5000, // Add buffer to HTTP timeout
+                cancellationToken);
+
+            _logger?.LogDebug("Long polling response: '{Response}'", response ?? "(empty)");
 
             if (!string.IsNullOrEmpty(response))
             {
+                _logger?.LogInformation("Config change detected in response");
+                
                 // Parse changed config keys
+                // Response format (without tenant): dataId\x02group\x01
+                // Response format (with tenant): dataId\x02group\x02tenant\x01
                 var parts = response.Split('\x01', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var part in parts)
                 {
@@ -356,11 +408,17 @@ public class NacosConfigService : IConfigService
                         {
                             DataId = fields[0],
                             Group = fields[1],
-                            Tenant = fields.Length > 2 ? fields[2] : null
+                            Tenant = fields.Length > 2 && !string.IsNullOrEmpty(fields[2]) ? fields[2] : null
                         });
+                        _logger?.LogInformation("Config changed: {DataId}@{Group}", fields[0], fields[1]);
                     }
                 }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation requested - propagate
+            throw;
         }
         catch (Exception ex)
         {

@@ -34,7 +34,8 @@ public class NacosHttpClient : IDisposable
 
         _httpClient = new HttpClient(handler)
         {
-            Timeout = TimeSpan.FromMilliseconds(_options.DefaultTimeout)
+            // Set timeout to infinite - we'll control timeout per-request with CancellationToken
+            Timeout = Timeout.InfiniteTimeSpan
         };
 
         _httpClient.DefaultRequestHeaders.Add("Client-Version", "RedNb.Nacos/1.0.0");
@@ -47,7 +48,7 @@ public class NacosHttpClient : IDisposable
     public async Task<string?> GetAsync(string path, Dictionary<string, string?>? parameters = null, 
         long timeout = 0, CancellationToken cancellationToken = default)
     {
-        return await RequestAsync(HttpMethod.Get, path, parameters, null, timeout, cancellationToken);
+        return await RequestAsync(HttpMethod.Get, path, parameters, null, null, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -56,7 +57,17 @@ public class NacosHttpClient : IDisposable
     public async Task<string?> PostAsync(string path, Dictionary<string, string?>? parameters = null,
         string? body = null, long timeout = 0, CancellationToken cancellationToken = default)
     {
-        return await RequestAsync(HttpMethod.Post, path, parameters, body, timeout, cancellationToken);
+        return await RequestAsync(HttpMethod.Post, path, parameters, body, null, timeout, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a POST request with custom headers.
+    /// </summary>
+    public async Task<string?> PostWithHeadersAsync(string path, Dictionary<string, string?>? parameters = null,
+        string? body = null, Dictionary<string, string>? headers = null, long timeout = 0, 
+        CancellationToken cancellationToken = default)
+    {
+        return await RequestAsync(HttpMethod.Post, path, parameters, body, headers, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -65,7 +76,7 @@ public class NacosHttpClient : IDisposable
     public async Task<string?> PutAsync(string path, Dictionary<string, string?>? parameters = null,
         string? body = null, long timeout = 0, CancellationToken cancellationToken = default)
     {
-        return await RequestAsync(HttpMethod.Put, path, parameters, body, timeout, cancellationToken);
+        return await RequestAsync(HttpMethod.Put, path, parameters, body, null, timeout, cancellationToken);
     }
 
     /// <summary>
@@ -74,14 +85,14 @@ public class NacosHttpClient : IDisposable
     public async Task<string?> DeleteAsync(string path, Dictionary<string, string?>? parameters = null,
         long timeout = 0, CancellationToken cancellationToken = default)
     {
-        return await RequestAsync(HttpMethod.Delete, path, parameters, null, timeout, cancellationToken);
+        return await RequestAsync(HttpMethod.Delete, path, parameters, null, null, timeout, cancellationToken);
     }
 
     /// <summary>
     /// Sends an HTTP request with automatic retry and server failover.
     /// </summary>
     private async Task<string?> RequestAsync(HttpMethod method, string path, 
-        Dictionary<string, string?>? parameters, string? body, long timeout, 
+        Dictionary<string, string?>? parameters, string? body, Dictionary<string, string>? headers, long timeout, 
         CancellationToken cancellationToken)
     {
         var servers = _serverListManager.GetServerList();
@@ -89,6 +100,9 @@ public class NacosHttpClient : IDisposable
         {
             throw new NacosException(NacosException.InvalidParam, "No available servers");
         }
+
+        // Use default timeout if not specified
+        var effectiveTimeout = timeout > 0 ? timeout : _options.DefaultTimeout;
 
         Exception? lastException = null;
         var maxRetry = Math.Max(1, servers.Count);
@@ -98,10 +112,14 @@ public class NacosHttpClient : IDisposable
             var server = _serverListManager.GetNextServer();
             var baseUrl = _options.GetBaseUrl(server);
             
+            // Create a timeout CancellationTokenSource for this request
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            
             try
             {
                 var url = BuildUrl(baseUrl, path, parameters);
-                _logger?.LogDebug("Sending {Method} request to {Url}", method, url);
+                _logger?.LogDebug("Sending {Method} request to {Url} with timeout {Timeout}ms", method, url, effectiveTimeout);
 
                 using var request = new HttpRequestMessage(method, url);
                 
@@ -113,16 +131,16 @@ public class NacosHttpClient : IDisposable
                     request.Content = new StringContent(body, Encoding.UTF8, NacosConstants.ContentTypeFormUrlEncoded);
                 }
 
-                using var cts = timeout > 0 
-                    ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken) 
-                    : null;
-                
-                if (cts != null)
+                // Add custom headers
+                if (headers != null)
                 {
-                    cts.CancelAfter(TimeSpan.FromMilliseconds(timeout));
+                    foreach (var header in headers)
+                    {
+                        request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    }
                 }
 
-                var response = await _httpClient.SendAsync(request, cts?.Token ?? cancellationToken);
+                var response = await _httpClient.SendAsync(request, linkedCts.Token);
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (response.IsSuccessStatusCode)
@@ -143,11 +161,17 @@ public class NacosHttpClient : IDisposable
 
                 throw new NacosException((int)response.StatusCode, $"Request failed: {content}");
             }
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
             {
+                // User requested cancellation - propagate immediately without retry
+                throw;
+            }
+            catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+            {
+                // Request timeout - this is a server issue, retry with next server
                 _serverListManager.MarkServerUnhealthy(server);
                 lastException = new NacosException(NacosException.ServerError, "Request timeout", ex);
-                _logger?.LogWarning(ex, "Request to {Server} timed out", server);
+                _logger?.LogWarning("Request to {Server} timed out after {Timeout}ms", server, effectiveTimeout);
             }
             catch (HttpRequestException ex)
             {

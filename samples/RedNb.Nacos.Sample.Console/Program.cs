@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using RedNb.Nacos.Client;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Config;
@@ -8,6 +9,13 @@ Console.WriteLine("  RedNb.Nacos SDK Console Sample");
 Console.WriteLine("===========================================");
 Console.WriteLine();
 
+// Setup logging
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole();
+    builder.SetMinimumLevel(LogLevel.Debug);
+});
+
 // Configuration
 var options = new NacosClientOptions
 {
@@ -15,14 +23,15 @@ var options = new NacosClientOptions
     Username = "nacos",
     Password = "nacos",
     Namespace = "",
+    EnableGrpc = false,
     DefaultTimeout = 5000
 };
 
 Console.WriteLine($"Connecting to Nacos server at: {options.ServerAddresses}");
 Console.WriteLine();
 
-// Create services using factory
-var factory = new NacosFactory();
+// Create services using factory with logger
+var factory = new NacosFactory(loggerFactory);
 var configService = factory.CreateConfigService(options);
 var namingService = factory.CreateNamingService(options);
 
