@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
     <Version>1.0.0</Version>
     <Authors>RedNb</Authors>
     <Description>Nacos .NET SDK ASP.NET Core Integration - Configuration provider, health checks, service discovery and middleware</Description>

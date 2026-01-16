@@ -66,7 +66,7 @@ services:
       nacos-mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v3/console/health/readiness"]
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 10
