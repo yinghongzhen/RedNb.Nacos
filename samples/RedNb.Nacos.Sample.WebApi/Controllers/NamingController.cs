@@ -151,7 +151,7 @@ public class NamingController : ControllerBase
                 Healthy = true,
                 Enabled = true,
                 Ephemeral = request.Ephemeral ?? true,
-                ClusterName = request.ClusterName,
+                ClusterName = request.ClusterName ?? "DEFAULT",
                 Metadata = request.Metadata ?? new Dictionary<string, string>()
             };
 
