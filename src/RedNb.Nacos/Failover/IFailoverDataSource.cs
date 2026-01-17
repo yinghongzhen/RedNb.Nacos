@@ -1,19 +1,19 @@
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// æ•…éšœè½¬ç§»æ•°æ®æºæ¥å£
+/// ¹ÊÕÏ×ªÒÆÊı¾İÔ´½Ó¿Ú
 /// </summary>
-/// <typeparam name="T">æ•°æ®ç±»å‹</typeparam>
+/// <typeparam name="T">Êı¾İÀàĞÍ</typeparam>
 public interface IFailoverDataSource<T> where T : class
 {
     /// <summary>
-    /// è·å–æ•…éšœè½¬ç§»å¼€å…³
+    /// »ñÈ¡¹ÊÕÏ×ªÒÆ¿ª¹Ø
     /// </summary>
     FailoverSwitch GetSwitch();
 
     /// <summary>
-    /// è·å–æ•…éšœè½¬ç§»æ•°æ®
+    /// »ñÈ¡¹ÊÕÏ×ªÒÆÊı¾İ
     /// </summary>
-    /// <returns>æ•…éšœè½¬ç§»æ•°æ®å­—å…¸ï¼Œkeyä¸ºæ•°æ®æ ‡è¯†ï¼Œvalueä¸ºæ•°æ®å®ä½“</returns>
+    /// <returns>¹ÊÕÏ×ªÒÆÊı¾İ×Öµä£¬keyÎªÊı¾İ±êÊ¶£¬valueÎªÊı¾İÊµÌå</returns>
     Dictionary<string, FailoverData<T>> GetFailoverData();
 }

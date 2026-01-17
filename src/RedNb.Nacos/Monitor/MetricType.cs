@@ -1,22 +1,22 @@
 namespace RedNb.Nacos.Monitor;
 
 /// <summary>
-/// æŒ‡æ ‡ç±»å‹æšä¸¾
+/// Ö¸±êÀàĞÍÃ¶¾Ù
 /// </summary>
 public enum MetricType
 {
     /// <summary>
-    /// è®¡é‡å™¨ï¼ˆå½“å‰å€¼ï¼‰
+    /// ¼ÆÁ¿Æ÷£¨µ±Ç°Öµ£©
     /// </summary>
     Gauge,
 
     /// <summary>
-    /// è®¡æ•°å™¨ï¼ˆç´¯ç§¯å€¼ï¼‰
+    /// ¼ÆÊıÆ÷£¨ÀÛ»ıÖµ£©
     /// </summary>
     Counter,
 
     /// <summary>
-    /// ç›´æ–¹å›¾ï¼ˆåˆ†å¸ƒï¼‰
+    /// Ö±·½Í¼£¨·Ö²¼£©
     /// </summary>
     Histogram
 }

@@ -1,28 +1,28 @@
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// æ•…éšœè½¬ç§»æ•°æ®å®ä½“
+/// ¹ÊÕÏ×ªÒÆÊı¾İÊµÌå
 /// </summary>
-/// <typeparam name="T">æ•°æ®ç±»å‹</typeparam>
+/// <typeparam name="T">Êı¾İÀàĞÍ</typeparam>
 public class FailoverData<T> where T : class
 {
     /// <summary>
-    /// æ•°æ®ç±»å‹
+    /// Êı¾İÀàĞÍ
     /// </summary>
     public FailoverDataType DataType { get; }
 
     /// <summary>
-    /// æ•°æ®å†…å®¹
+    /// Êı¾İÄÚÈİ
     /// </summary>
     public T Data { get; }
 
     /// <summary>
-    /// æ•°æ®é”®
+    /// Êı¾İ¼ü
     /// </summary>
     public string Key { get; }
 
     /// <summary>
-    /// æ„é€ å‡½æ•°
+    /// ¹¹Ôìº¯Êı
     /// </summary>
     public FailoverData(FailoverDataType dataType, string key, T data)
     {
@@ -32,7 +32,7 @@ public class FailoverData<T> where T : class
     }
 
     /// <summary>
-    /// åˆ›å»ºå‘½åæœåŠ¡æ•…éšœè½¬ç§»æ•°æ®
+    /// ´´½¨ÃüÃû·şÎñ¹ÊÕÏ×ªÒÆÊı¾İ
     /// </summary>
     public static FailoverData<T> CreateForNaming(string key, T data)
     {
@@ -40,7 +40,7 @@ public class FailoverData<T> where T : class
     }
 
     /// <summary>
-    /// åˆ›å»ºé…ç½®æœåŠ¡æ•…éšœè½¬ç§»æ•°æ®
+    /// ´´½¨ÅäÖÃ·şÎñ¹ÊÕÏ×ªÒÆÊı¾İ
     /// </summary>
     public static FailoverData<T> CreateForConfig(string key, T data)
     {

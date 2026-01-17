@@ -1,22 +1,22 @@
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// æ•…éšœè½¬ç§»å¼€å…³
+/// ¹ÊÕÏ×ªÒÆ¿ª¹Ø
 /// </summary>
 public class FailoverSwitch
 {
     /// <summary>
-    /// æ˜¯å¦å¯ç”¨æ•…éšœè½¬ç§»
+    /// ÊÇ·ñÆôÓÃ¹ÊÕÏ×ªÒÆ
     /// </summary>
     public bool Enabled { get; set; }
 
     /// <summary>
-    /// åˆ›å»ºå¯ç”¨çŠ¶æ€çš„å¼€å…³
+    /// ´´½¨ÆôÓÃ×´Ì¬µÄ¿ª¹Ø
     /// </summary>
     public static FailoverSwitch CreateEnabled() => new() { Enabled = true };
 
     /// <summary>
-    /// åˆ›å»ºç¦ç”¨çŠ¶æ€çš„å¼€å…³
+    /// ´´½¨½ûÓÃ×´Ì¬µÄ¿ª¹Ø
     /// </summary>
     public static FailoverSwitch CreateDisabled() => new() { Enabled = false };
 }

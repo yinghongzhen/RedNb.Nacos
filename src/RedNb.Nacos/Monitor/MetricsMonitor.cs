@@ -4,34 +4,34 @@ using System.Diagnostics;
 namespace RedNb.Nacos.Monitor;
 
 /// <summary>
-/// æŒ‡æ ‡ç›‘æ§å™¨
-/// æä¾› Nacos å®¢æˆ·ç«¯çš„æŒ‡æ ‡æ”¶é›†å’Œå¯¼å‡ºåŠŸèƒ½
+/// Ö¸±ê¼à¿ØÆ÷
+/// Ìá¹© Nacos ¿Í»§¶ËµÄÖ¸±êÊÕ¼¯ºÍµ¼³ö¹¦ÄÜ
 /// </summary>
 public class MetricsMonitor
 {
     private static readonly Lazy<MetricsMonitor> _instance = new(() => new MetricsMonitor());
 
     /// <summary>
-    /// é»˜è®¤å®ä¾‹
+    /// Ä¬ÈÏÊµÀı
     /// </summary>
     public static MetricsMonitor Default => _instance.Value;
 
-    // Gauge æŒ‡æ ‡å­˜å‚¨
+    // Gauge Ö¸±ê´æ´¢
     private readonly ConcurrentDictionary<string, GaugeMetric> _gauges = new();
 
-    // Counter æŒ‡æ ‡å­˜å‚¨
+    // Counter Ö¸±ê´æ´¢
     private readonly ConcurrentDictionary<string, CounterMetric> _counters = new();
 
-    // Histogram æŒ‡æ ‡å­˜å‚¨
+    // Histogram Ö¸±ê´æ´¢
     private readonly ConcurrentDictionary<string, HistogramMetric> _histograms = new();
 
     /// <summary>
-    /// æ˜¯å¦å¯ç”¨æŒ‡æ ‡æ”¶é›†
+    /// ÊÇ·ñÆôÓÃÖ¸±êÊÕ¼¯
     /// </summary>
     public bool Enabled { get; set; } = true;
 
     /// <summary>
-    /// ç§æœ‰æ„é€ å‡½æ•°
+    /// Ë½ÓĞ¹¹Ôìº¯Êı
     /// </summary>
     private MetricsMonitor()
     {
@@ -39,17 +39,17 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// åˆå§‹åŒ–é»˜è®¤æŒ‡æ ‡
+    /// ³õÊ¼»¯Ä¬ÈÏÖ¸±ê
     /// </summary>
     private void InitializeMetrics()
     {
-        // åˆå§‹åŒ– Gauge æŒ‡æ ‡
+        // ³õÊ¼»¯ Gauge Ö¸±ê
         RegisterGauge(MetricNames.ServiceInfoMapSize, "Number of cached service information");
         RegisterGauge(MetricNames.ListenConfigCount, "Number of listened configs");
         RegisterGauge(MetricNames.ConnectionStatus, "Connection status (1=connected, 0=disconnected)");
         RegisterGauge(MetricNames.FailoverEnabled, "Failover enabled status (1=enabled, 0=disabled)");
 
-        // åˆå§‹åŒ– Counter æŒ‡æ ‡
+        // ³õÊ¼»¯ Counter Ö¸±ê
         RegisterCounter(MetricNames.ConfigRequestSuccessTotal, "Total successful config requests");
         RegisterCounter(MetricNames.ConfigRequestFailedTotal, "Total failed config requests");
         RegisterCounter(MetricNames.NamingRequestSuccessTotal, "Total successful naming requests");
@@ -59,7 +59,7 @@ public class MetricsMonitor
         RegisterCounter(MetricNames.RedoOperationTotal, "Total redo operations");
         RegisterCounter(MetricNames.FailoverUsedTotal, "Total failover uses");
 
-        // åˆå§‹åŒ– Histogram æŒ‡æ ‡
+        // ³õÊ¼»¯ Histogram Ö¸±ê
         RegisterHistogram(MetricNames.RequestLatency, "Request latency in milliseconds",
             new[] { 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0 });
         RegisterHistogram(MetricNames.ConfigRequestLatency, "Config request latency in milliseconds",
@@ -68,10 +68,10 @@ public class MetricsMonitor
             new[] { 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0 });
     }
 
-    #region Gauge æ“ä½œ
+    #region Gauge ²Ù×÷
 
     /// <summary>
-    /// æ³¨å†Œ Gauge æŒ‡æ ‡
+    /// ×¢²á Gauge Ö¸±ê
     /// </summary>
     public GaugeMetric RegisterGauge(string name, string description, IDictionary<string, string>? labels = null)
     {
@@ -79,7 +79,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®¾ç½® Gauge å€¼
+    /// ÉèÖÃ Gauge Öµ
     /// </summary>
     public void SetGauge(string name, double value)
     {
@@ -92,7 +92,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// å¢åŠ  Gauge å€¼
+    /// Ôö¼Ó Gauge Öµ
     /// </summary>
     public void IncreaseGauge(string name, double value = 1)
     {
@@ -105,7 +105,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// å‡å°‘ Gauge å€¼
+    /// ¼õÉÙ Gauge Öµ
     /// </summary>
     public void DecreaseGauge(string name, double value = 1)
     {
@@ -118,7 +118,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è·å– Gauge å€¼
+    /// »ñÈ¡ Gauge Öµ
     /// </summary>
     public double GetGaugeValue(string name)
     {
@@ -127,10 +127,10 @@ public class MetricsMonitor
 
     #endregion
 
-    #region Counter æ“ä½œ
+    #region Counter ²Ù×÷
 
     /// <summary>
-    /// æ³¨å†Œ Counter æŒ‡æ ‡
+    /// ×¢²á Counter Ö¸±ê
     /// </summary>
     public CounterMetric RegisterCounter(string name, string description, IDictionary<string, string>? labels = null)
     {
@@ -138,7 +138,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// å¢åŠ  Counter å€¼
+    /// Ôö¼Ó Counter Öµ
     /// </summary>
     public void IncreaseCounter(string name, double value = 1)
     {
@@ -151,7 +151,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è·å– Counter å€¼
+    /// »ñÈ¡ Counter Öµ
     /// </summary>
     public double GetCounterValue(string name)
     {
@@ -160,10 +160,10 @@ public class MetricsMonitor
 
     #endregion
 
-    #region Histogram æ“ä½œ
+    #region Histogram ²Ù×÷
 
     /// <summary>
-    /// æ³¨å†Œ Histogram æŒ‡æ ‡
+    /// ×¢²á Histogram Ö¸±ê
     /// </summary>
     public HistogramMetric RegisterHistogram(string name, string description, double[] buckets, IDictionary<string, string>? labels = null)
     {
@@ -171,7 +171,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è§‚å¯Ÿ Histogram å€¼
+    /// ¹Û²ì Histogram Öµ
     /// </summary>
     public void ObserveHistogram(string name, double value)
     {
@@ -184,7 +184,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// å¼€å§‹è®¡æ—¶å¹¶è¿”å›ç”¨äºè®°å½•çš„ Timer
+    /// ¿ªÊ¼¼ÆÊ±²¢·µ»ØÓÃÓÚ¼ÇÂ¼µÄ Timer
     /// </summary>
     public IDisposable StartTimer(string histogramName)
     {
@@ -193,10 +193,10 @@ public class MetricsMonitor
 
     #endregion
 
-    #region ä¾¿æ·æ–¹æ³•
+    #region ±ã½İ·½·¨
 
     /// <summary>
-    /// è®°å½•é…ç½®è¯·æ±‚æˆåŠŸ
+    /// ¼ÇÂ¼ÅäÖÃÇëÇó³É¹¦
     /// </summary>
     public void RecordConfigRequestSuccess()
     {
@@ -204,7 +204,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•é…ç½®è¯·æ±‚å¤±è´¥
+    /// ¼ÇÂ¼ÅäÖÃÇëÇóÊ§°Ü
     /// </summary>
     public void RecordConfigRequestFailed()
     {
@@ -212,7 +212,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•å‘½åè¯·æ±‚æˆåŠŸ
+    /// ¼ÇÂ¼ÃüÃûÇëÇó³É¹¦
     /// </summary>
     public void RecordNamingRequestSuccess()
     {
@@ -220,7 +220,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•å‘½åè¯·æ±‚å¤±è´¥
+    /// ¼ÇÂ¼ÃüÃûÇëÇóÊ§°Ü
     /// </summary>
     public void RecordNamingRequestFailed()
     {
@@ -228,7 +228,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•æœåŠ¡å˜æ›´æ¨é€
+    /// ¼ÇÂ¼·şÎñ±ä¸üÍÆËÍ
     /// </summary>
     public void RecordServiceChangePush()
     {
@@ -236,7 +236,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•é…ç½®å˜æ›´æ¨é€
+    /// ¼ÇÂ¼ÅäÖÃ±ä¸üÍÆËÍ
     /// </summary>
     public void RecordConfigChangePush()
     {
@@ -244,7 +244,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•é‡åšæ“ä½œ
+    /// ¼ÇÂ¼ÖØ×ö²Ù×÷
     /// </summary>
     public void RecordRedoOperation()
     {
@@ -252,7 +252,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®°å½•æ•…éšœè½¬ç§»ä½¿ç”¨
+    /// ¼ÇÂ¼¹ÊÕÏ×ªÒÆÊ¹ÓÃ
     /// </summary>
     public void RecordFailoverUsed()
     {
@@ -260,7 +260,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®¾ç½®è¿æ¥çŠ¶æ€
+    /// ÉèÖÃÁ¬½Ó×´Ì¬
     /// </summary>
     public void SetConnectionStatus(bool connected)
     {
@@ -268,7 +268,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®¾ç½®æ•…éšœè½¬ç§»çŠ¶æ€
+    /// ÉèÖÃ¹ÊÕÏ×ªÒÆ×´Ì¬
     /// </summary>
     public void SetFailoverEnabled(bool enabled)
     {
@@ -276,7 +276,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®¾ç½®æœåŠ¡ä¿¡æ¯ç¼“å­˜æ•°é‡
+    /// ÉèÖÃ·şÎñĞÅÏ¢»º´æÊıÁ¿
     /// </summary>
     public void SetServiceInfoMapSize(int size)
     {
@@ -284,7 +284,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// è®¾ç½®ç›‘å¬é…ç½®æ•°é‡
+    /// ÉèÖÃ¼àÌıÅäÖÃÊıÁ¿
     /// </summary>
     public void SetListenConfigCount(int count)
     {
@@ -293,10 +293,10 @@ public class MetricsMonitor
 
     #endregion
 
-    #region å¯¼å‡º
+    #region µ¼³ö
 
     /// <summary>
-    /// è·å–æ‰€æœ‰æŒ‡æ ‡å¿«ç…§
+    /// »ñÈ¡ËùÓĞÖ¸±ê¿ìÕÕ
     /// </summary>
     public MetricsSnapshot GetSnapshot()
     {
@@ -310,7 +310,7 @@ public class MetricsMonitor
     }
 
     /// <summary>
-    /// é‡ç½®æ‰€æœ‰æŒ‡æ ‡
+    /// ÖØÖÃËùÓĞÖ¸±ê
     /// </summary>
     public void Reset()
     {
@@ -322,7 +322,7 @@ public class MetricsMonitor
     #endregion
 
     /// <summary>
-    /// Histogram è®¡æ—¶å™¨
+    /// Histogram ¼ÆÊ±Æ÷
     /// </summary>
     private class HistogramTimer : IDisposable
     {

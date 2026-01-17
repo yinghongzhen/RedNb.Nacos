@@ -395,10 +395,14 @@ public class NacosConfigService : IConfigService
             {
                 _logger?.LogInformation("Config change detected in response");
                 
+                // The response may be URL-encoded, decode it first
+                var decodedResponse = Uri.UnescapeDataString(response);
+                _logger?.LogDebug("Decoded response: '{DecodedResponse}'", decodedResponse);
+                
                 // Parse changed config keys
                 // Response format (without tenant): dataId\x02group\x01
                 // Response format (with tenant): dataId\x02group\x02tenant\x01
-                var parts = response.Split('\x01', StringSplitOptions.RemoveEmptyEntries);
+                var parts = decodedResponse.Split('\x01', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var part in parts)
                 {
                     var fields = part.Split('\x02');

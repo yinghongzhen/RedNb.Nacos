@@ -4,20 +4,26 @@ using Microsoft.Extensions.Logging;
 namespace RedNb.Nacos.Redo;
 
 /// <summary>
-/// Redo 服务抽象基类
+/// 抽象 Redo 服务基类
+/// 参考 Java SDK: com.alibaba.nacos.client.redo.service.AbstractRedoService
 /// </summary>
-public abstract class AbstractRedoService : IRedoService, IDisposable
+public abstract class AbstractRedoService : IDisposable
 {
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, object>> _redoDataMap = new();
     private readonly object _lockObj = new();
-    private CancellationTokenSource? _cts;
+    private readonly CancellationTokenSource _cts = new();
     private Task? _redoTask;
 
     /// <summary>
     /// Redo 任务执行间隔（毫秒）
     /// </summary>
-    protected virtual int RedoDelayMs => 3000;
+    protected long RedoDelayTime { get; set; } = 3000;
+
+    /// <summary>
+    /// Redo 线程数量
+    /// </summary>
+    protected int RedoThreadCount { get; set; } = 1;
 
     /// <summary>
     /// 是否已连接
@@ -32,132 +38,247 @@ public abstract class AbstractRedoService : IRedoService, IDisposable
         _logger = logger;
     }
 
-    /// <inheritdoc />
-    public void RegisterRedoData<T>(RedoData<T> redoData) where T : class
+    /// <summary>
+    /// 启动 Redo 任务
+    /// </summary>
+    protected void StartRedoTask()
     {
-        var typeMap = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
-        typeMap[redoData.RedoKey] = redoData;
-        _logger.LogDebug("Registered redo data: Type={Type}, Key={Key}", typeof(T).Name, redoData.RedoKey);
-    }
-
-    /// <inheritdoc />
-    public IEnumerable<RedoData<T>> GetRedoData<T>() where T : class
-    {
-        if (_redoDataMap.TryGetValue(typeof(T), out var typeMap))
+        _redoTask = Task.Run(async () =>
         {
-            return typeMap.Values.Cast<RedoData<T>>().ToList();
-        }
-        return Enumerable.Empty<RedoData<T>>();
-    }
-
-    /// <inheritdoc />
-    public void RemoveRedoData<T>(string key) where T : class
-    {
-        if (_redoDataMap.TryGetValue(typeof(T), out var typeMap))
-        {
-            typeMap.TryRemove(key, out _);
-            _logger.LogDebug("Removed redo data: Type={Type}, Key={Key}", typeof(T).Name, key);
-        }
-    }
-
-    /// <inheritdoc />
-    public void OnConnected()
-    {
-        lock (_lockObj)
-        {
-            IsConnected = true;
-            _logger.LogInformation("Connection established, marking all redo data as unregistered");
-
-            // 连接建立后，将所有已注册的数据标记为未注册，以便重新注册
-            foreach (var typeMap in _redoDataMap.Values)
+            while (!_cts.Token.IsCancellationRequested)
             {
-                foreach (var redoData in typeMap.Values)
+                try
                 {
-                    var method = redoData.GetType().GetMethod("SetUnregistered");
-                    method?.Invoke(redoData, null);
+                    await Task.Delay((int)RedoDelayTime, _cts.Token);
+
+                    if (!IsConnected)
+                    {
+                        continue;
+                    }
+
+                    await ExecuteRedoTaskAsync(_cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in redo loop");
+                }
+            }
+        }, _cts.Token);
+    }
+
+    /// <summary>
+    /// 执行 Redo 任务（子类实现）
+    /// </summary>
+    protected abstract Task ExecuteRedoTaskAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// 连接成功事件
+    /// </summary>
+    public virtual void OnConnected()
+    {
+        IsConnected = true;
+        _logger.LogInformation("Grpc connection connect");
+    }
+
+    /// <summary>
+    /// 连接断开事件
+    /// </summary>
+    public virtual void OnDisconnect()
+    {
+        IsConnected = false;
+        _logger.LogWarning("Grpc connection disconnect, mark to redo");
+
+        foreach (var typeKey in _redoDataMap.Keys)
+        {
+            if (_redoDataMap.TryGetValue(typeKey, out var actualRedoData))
+            {
+                lock (actualRedoData)
+                {
+                    foreach (var redoData in actualRedoData.Values)
+                    {
+                        // 使用反射设置 Registered = false
+                        var prop = redoData.GetType().GetProperty("Registered");
+                        prop?.SetValue(redoData, false);
+                    }
+                }
+            }
+        }
+
+        _logger.LogWarning("mark to redo completed");
+    }
+
+    /// <summary>
+    /// 关闭服务
+    /// </summary>
+    public virtual void Shutdown()
+    {
+        _logger.LogInformation("Shutdown grpc redo service executor");
+        _redoDataMap.Clear();
+        _cts.Cancel();
+    }
+
+    #region Redo Data Management
+
+    /// <summary>
+    /// 缓存 Redo 数据
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    /// <param name="redoData">Redo 数据</param>
+    public void CachedRedoData<T>(string key, RedoData<T> redoData)
+    {
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            actualRedoData[key] = redoData;
+        }
+    }
+
+    /// <summary>
+    /// 移除 Redo 数据
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    public void RemoveRedoData<T>(string key)
+    {
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
+            {
+                if (!redoData.ExpectedRegistered)
+                {
+                    actualRedoData.TryRemove(key, out _);
                 }
             }
         }
     }
 
-    /// <inheritdoc />
-    public void OnDisconnected()
+    /// <summary>
+    /// 数据注册成功，标记为已注册
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    public void DataRegistered<T>(string key)
     {
-        lock (_lockObj)
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
         {
-            IsConnected = false;
-            _logger.LogWarning("Connection lost, redo service will retry operations when reconnected");
-        }
-    }
-
-    /// <inheritdoc />
-    public Task StartAsync(CancellationToken cancellationToken = default)
-    {
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _redoTask = Task.Run(() => RunRedoLoopAsync(_cts.Token), _cts.Token);
-        _logger.LogInformation("Redo service started");
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async Task StopAsync(CancellationToken cancellationToken = default)
-    {
-        _cts?.Cancel();
-        if (_redoTask != null)
-        {
-            try
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
             {
-                await _redoTask.WaitAsync(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                // 预期的取消
+                redoData.SetRegistered();
             }
         }
-        _logger.LogInformation("Redo service stopped");
     }
 
     /// <summary>
-    /// Redo 循环
+    /// 数据注销，标记为正在注销
     /// </summary>
-    private async Task RunRedoLoopAsync(CancellationToken cancellationToken)
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    public void DataDeregister<T>(string key)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
         {
-            try
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
             {
-                await Task.Delay(RedoDelayMs, cancellationToken);
+                redoData.Unregistering = true;
+                redoData.ExpectedRegistered = false;
+            }
+        }
+    }
 
-                if (!IsConnected)
+    /// <summary>
+    /// 数据注销完成
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    public void DataDeregistered<T>(string key)
+    {
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
+            {
+                redoData.SetUnregistered();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 判断数据是否已注册
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    /// <returns>是否已注册</returns>
+    public bool IsDataRegistered<T>(string key)
+    {
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
+            {
+                return redoData.Registered;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 查找需要 Redo 的数据
+    /// </summary>
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <returns>需要 Redo 的数据集合</returns>
+    public HashSet<RedoData<T>> FindRedoData<T>()
+    {
+        var result = new HashSet<RedoData<T>>();
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            foreach (var obj in actualRedoData.Values)
+            {
+                if (obj is RedoData<T> redoData && redoData.IsNeedRedo())
                 {
-                    continue;
+                    result.Add(redoData);
                 }
-
-                await ExecuteRedoAsync(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in redo loop");
             }
         }
+        return result;
     }
 
     /// <summary>
-    /// 执行 redo 操作
+    /// 获取 Redo 数据
     /// </summary>
-    protected abstract Task ExecuteRedoAsync(CancellationToken cancellationToken);
+    /// <typeparam name="T">数据类型</typeparam>
+    /// <param name="key">数据键</param>
+    /// <returns>Redo 数据</returns>
+    public RedoData<T>? GetRedoData<T>(string key)
+    {
+        var actualRedoData = _redoDataMap.GetOrAdd(typeof(T), _ => new ConcurrentDictionary<string, object>());
+        lock (actualRedoData)
+        {
+            if (actualRedoData.TryGetValue(key, out var obj) && obj is RedoData<T> redoData)
+            {
+                return redoData;
+            }
+        }
+        return null;
+    }
+
+    #endregion
 
     /// <summary>
     /// 释放资源
     /// </summary>
     public void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
+        Shutdown();
+        _cts.Dispose();
         GC.SuppressFinalize(this);
     }
 }

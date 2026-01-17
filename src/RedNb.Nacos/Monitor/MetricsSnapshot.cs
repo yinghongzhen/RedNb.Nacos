@@ -1,38 +1,38 @@
 namespace RedNb.Nacos.Monitor;
 
 /// <summary>
-/// æŒ‡æ ‡å¿«ç…§
+/// Ö¸±ê¿ìÕÕ
 /// </summary>
 public class MetricsSnapshot
 {
     /// <summary>
-    /// å¿«ç…§æ—¶é—´æˆ³
+    /// ¿ìÕÕÊ±¼ä´Á
     /// </summary>
     public DateTimeOffset Timestamp { get; set; }
 
     /// <summary>
-    /// Gauge æŒ‡æ ‡
+    /// Gauge Ö¸±ê
     /// </summary>
     public Dictionary<string, GaugeSnapshot> Gauges { get; set; } = new();
 
     /// <summary>
-    /// Counter æŒ‡æ ‡
+    /// Counter Ö¸±ê
     /// </summary>
     public Dictionary<string, CounterSnapshot> Counters { get; set; } = new();
 
     /// <summary>
-    /// Histogram æŒ‡æ ‡
+    /// Histogram Ö¸±ê
     /// </summary>
     public Dictionary<string, HistogramSnapshot> Histograms { get; set; } = new();
 
     /// <summary>
-    /// å¯¼å‡ºä¸º Prometheus æ–‡æœ¬æ ¼å¼
+    /// µ¼³öÎª Prometheus ÎÄ±¾¸ñÊ½
     /// </summary>
     public string ToPrometheusFormat()
     {
         var lines = new List<string>();
 
-        // å¯¼å‡º Gauge
+        // µ¼³ö Gauge
         foreach (var gauge in Gauges.Values)
         {
             lines.Add($"# HELP {gauge.Name} {gauge.Description}");
@@ -40,7 +40,7 @@ public class MetricsSnapshot
             lines.Add($"{gauge.Name}{FormatLabels(gauge.Labels)} {gauge.Value}");
         }
 
-        // å¯¼å‡º Counter
+        // µ¼³ö Counter
         foreach (var counter in Counters.Values)
         {
             lines.Add($"# HELP {counter.Name} {counter.Description}");
@@ -48,7 +48,7 @@ public class MetricsSnapshot
             lines.Add($"{counter.Name}{FormatLabels(counter.Labels)} {counter.Value}");
         }
 
-        // å¯¼å‡º Histogram
+        // µ¼³ö Histogram
         foreach (var histogram in Histograms.Values)
         {
             lines.Add($"# HELP {histogram.Name} {histogram.Description}");
@@ -75,7 +75,7 @@ public class MetricsSnapshot
     }
 
     /// <summary>
-    /// æ ¼å¼åŒ–æ ‡ç­¾
+    /// ¸ñÊ½»¯±êÇ©
     /// </summary>
     private static string FormatLabels(IReadOnlyDictionary<string, string>? labels)
     {
@@ -89,7 +89,7 @@ public class MetricsSnapshot
     }
 
     /// <summary>
-    /// æ·»åŠ æ ‡ç­¾
+    /// Ìí¼Ó±êÇ©
     /// </summary>
     private static Dictionary<string, string> AddLabel(IReadOnlyDictionary<string, string>? labels, string key, string value)
     {
@@ -99,7 +99,7 @@ public class MetricsSnapshot
     }
 
     /// <summary>
-    /// è½¬ä¹‰æ ‡ç­¾å€¼
+    /// ×ªÒå±êÇ©Öµ
     /// </summary>
     private static string EscapeLabelValue(string value)
     {

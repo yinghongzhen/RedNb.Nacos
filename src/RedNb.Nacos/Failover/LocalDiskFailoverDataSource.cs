@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// åŸºäºæœ¬åœ°ç£ç›˜çš„æ•…éšœè½¬ç§»æ•°æ®æº
+/// »ùÓÚ±¾µØ´ÅÅÌµÄ¹ÊÕÏ×ªÒÆÊı¾İÔ´
 /// </summary>
-/// <typeparam name="T">æ•°æ®ç±»å‹</typeparam>
+/// <typeparam name="T">Êı¾İÀàĞÍ</typeparam>
 public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : class
 {
     private readonly ILogger _logger;
@@ -15,11 +15,11 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     private readonly JsonSerializerOptions _jsonOptions;
 
     /// <summary>
-    /// æ„é€ å‡½æ•°
+    /// ¹¹Ôìº¯Êı
     /// </summary>
-    /// <param name="logger">æ—¥å¿—è®°å½•å™¨</param>
-    /// <param name="cacheDir">ç¼“å­˜ç›®å½•</param>
-    /// <param name="switchFileName">å¼€å…³æ–‡ä»¶å</param>
+    /// <param name="logger">ÈÕÖ¾¼ÇÂ¼Æ÷</param>
+    /// <param name="cacheDir">»º´æÄ¿Â¼</param>
+    /// <param name="switchFileName">¿ª¹ØÎÄ¼şÃû</param>
     public LocalDiskFailoverDataSource(ILogger logger, string cacheDir, string switchFileName = "failover-switch")
     {
         _logger = logger;
@@ -35,7 +35,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// è·å–æ•…éšœè½¬ç§»å¼€å…³
+    /// »ñÈ¡¹ÊÕÏ×ªÒÆ¿ª¹Ø
     /// </summary>
     public FailoverSwitch GetSwitch()
     {
@@ -62,7 +62,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// è·å–æ•…éšœè½¬ç§»æ•°æ®
+    /// »ñÈ¡¹ÊÕÏ×ªÒÆÊı¾İ
     /// </summary>
     public Dictionary<string, FailoverData<T>> GetFailoverData()
     {
@@ -109,7 +109,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// ä¿å­˜æ•…éšœè½¬ç§»æ•°æ®åˆ°ç£ç›˜
+    /// ±£´æ¹ÊÕÏ×ªÒÆÊı¾İµ½´ÅÅÌ
     /// </summary>
     public void SaveFailoverData(string key, T data)
     {
@@ -129,7 +129,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// åˆ é™¤æ•…éšœè½¬ç§»æ•°æ®
+    /// É¾³ı¹ÊÕÏ×ªÒÆÊı¾İ
     /// </summary>
     public void DeleteFailoverData(string key)
     {
@@ -150,7 +150,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// è®¾ç½®æ•…éšœè½¬ç§»å¼€å…³
+    /// ÉèÖÃ¹ÊÕÏ×ªÒÆ¿ª¹Ø
     /// </summary>
     public void SetSwitch(bool enabled)
     {
@@ -168,7 +168,7 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// ç¡®ä¿ç›®å½•å­˜åœ¨
+    /// È·±£Ä¿Â¼´æÔÚ
     /// </summary>
     private void EnsureDirectoryExists()
     {
@@ -179,16 +179,16 @@ public class LocalDiskFailoverDataSource<T> : IFailoverDataSource<T> where T : c
     }
 
     /// <summary>
-    /// ç¼–ç é”®åï¼ˆç”¨äºæ–‡ä»¶åï¼‰
+    /// ±àÂë¼üÃû£¨ÓÃÓÚÎÄ¼şÃû£©
     /// </summary>
     private static string EncodeKey(string key)
     {
-        // å°†ç‰¹æ®Šå­—ç¬¦æ›¿æ¢ä¸ºå®‰å…¨å­—ç¬¦
+        // ½«ÌØÊâ×Ö·ûÌæ»»Îª°²È«×Ö·û
         return key.Replace("@@", "__").Replace("/", "_").Replace("\\", "_");
     }
 
     /// <summary>
-    /// è§£ç é”®å
+    /// ½âÂë¼üÃû
     /// </summary>
     private static string DecodeKey(string encodedKey)
     {

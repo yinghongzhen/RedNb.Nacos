@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace RedNb.Nacos.Monitor;
 
 /// <summary>
-/// Histogram æŒ‡æ ‡ï¼ˆåˆ†å¸ƒç›´æ–¹å›¾ï¼‰
+/// Histogram Ö¸±ê£¨·Ö²¼Ö±·½Í¼£©
 /// </summary>
 public class HistogramMetric
 {
@@ -14,27 +14,27 @@ public class HistogramMetric
     private long _count;
 
     /// <summary>
-    /// æŒ‡æ ‡åç§°
+    /// Ö¸±êÃû³Æ
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// æŒ‡æ ‡æè¿°
+    /// Ö¸±êÃèÊö
     /// </summary>
     public string Description { get; }
 
     /// <summary>
-    /// æ ‡ç­¾
+    /// ±êÇ©
     /// </summary>
     public IReadOnlyDictionary<string, string>? Labels { get; }
 
     /// <summary>
-    /// æ¡¶è¾¹ç•Œ
+    /// Í°±ß½ç
     /// </summary>
     public IReadOnlyList<double> Buckets => _buckets;
 
     /// <summary>
-    /// æ€»å’Œ
+    /// ×ÜºÍ
     /// </summary>
     public double Sum
     {
@@ -45,7 +45,7 @@ public class HistogramMetric
     }
 
     /// <summary>
-    /// è®¡æ•°
+    /// ¼ÆÊı
     /// </summary>
     public long Count
     {
@@ -56,7 +56,7 @@ public class HistogramMetric
     }
 
     /// <summary>
-    /// æ„é€ å‡½æ•°
+    /// ¹¹Ôìº¯Êı
     /// </summary>
     public HistogramMetric(string name, string description, double[] buckets, IDictionary<string, string>? labels = null)
     {
@@ -64,13 +64,13 @@ public class HistogramMetric
         Description = description;
         Labels = labels?.AsReadOnly();
 
-        // ç¡®ä¿æ¡¶è¾¹ç•Œæœ‰åº
+        // È·±£Í°±ß½çÓĞĞò
         _buckets = buckets.OrderBy(b => b).ToArray();
-        _bucketCounts = new long[_buckets.Length + 1]; // +1 ç”¨äº +Inf æ¡¶
+        _bucketCounts = new long[_buckets.Length + 1]; // +1 ÓÃÓÚ +Inf Í°
     }
 
     /// <summary>
-    /// è§‚å¯Ÿä¸€ä¸ªå€¼
+    /// ¹Û²ìÒ»¸öÖµ
     /// </summary>
     public void Observe(double value)
     {
@@ -79,7 +79,7 @@ public class HistogramMetric
             _sum += value;
             _count++;
 
-            // æ‰¾åˆ°å¯¹åº”çš„æ¡¶å¹¶å¢åŠ è®¡æ•°
+            // ÕÒµ½¶ÔÓ¦µÄÍ°²¢Ôö¼Ó¼ÆÊı
             for (var i = 0; i < _buckets.Length; i++)
             {
                 if (value <= _buckets[i])
@@ -89,13 +89,13 @@ public class HistogramMetric
                 }
             }
 
-            // å¤§äºæ‰€æœ‰æ¡¶è¾¹ç•Œï¼Œæ”¾å…¥ +Inf æ¡¶
+            // ´óÓÚËùÓĞÍ°±ß½ç£¬·ÅÈë +Inf Í°
             _bucketCounts[_buckets.Length]++;
         }
     }
 
     /// <summary>
-    /// è·å–æ¡¶è®¡æ•°
+    /// »ñÈ¡Í°¼ÆÊı
     /// </summary>
     public long[] GetBucketCounts()
     {
@@ -106,7 +106,7 @@ public class HistogramMetric
     }
 
     /// <summary>
-    /// è·å–å¹³å‡å€¼
+    /// »ñÈ¡Æ½¾ùÖµ
     /// </summary>
     public double GetMean()
     {
@@ -117,7 +117,7 @@ public class HistogramMetric
     }
 
     /// <summary>
-    /// é‡ç½®ç›´æ–¹å›¾
+    /// ÖØÖÃÖ±·½Í¼
     /// </summary>
     public void Reset()
     {
@@ -130,7 +130,7 @@ public class HistogramMetric
     }
 
     /// <summary>
-    /// è·å–å¿«ç…§
+    /// »ñÈ¡¿ìÕÕ
     /// </summary>
     public HistogramSnapshot GetSnapshot()
     {
@@ -152,7 +152,7 @@ public class HistogramMetric
 }
 
 /// <summary>
-/// Histogram å¿«ç…§
+/// Histogram ¿ìÕÕ
 /// </summary>
 public class HistogramSnapshot
 {

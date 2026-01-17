@@ -1,86 +1,43 @@
 namespace RedNb.Nacos.Redo;
 
 /// <summary>
-/// Redo 数据实体，用于跟踪需要重做的操作状态
+/// Nacos 客户端 Redo 数据基类
+/// 参考 Java SDK: com.alibaba.nacos.client.redo.data.RedoData
 /// </summary>
 /// <typeparam name="T">数据类型</typeparam>
-public class RedoData<T> where T : class
+public abstract class RedoData<T>
 {
     /// <summary>
-    /// 获取或设置数据
+    /// 期望的最终状态
+    /// true: 期望最终注册到服务器
+    /// false: 期望从服务器注销
     /// </summary>
-    public T? Data { get; set; }
+    public bool ExpectedRegistered { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置命名空间
+    /// 是否已注册到服务器
     /// </summary>
-    public string Namespace { get; set; } = string.Empty;
+    public bool Registered { get; set; }
 
     /// <summary>
-    /// 获取或设置分组
+    /// 是否正在注销中
     /// </summary>
-    public string Group { get; set; } = string.Empty;
+    public bool Unregistering { get; set; }
 
     /// <summary>
-    /// 获取或设置服务名
+    /// 数据
     /// </summary>
-    public string ServiceName { get; set; } = string.Empty;
+    public T? Data { get; private set; }
 
     /// <summary>
-    /// 是否已注册
+    /// 获取数据
     /// </summary>
-    public bool Registered { get; private set; }
+    public T? Get() => Data;
 
     /// <summary>
-    /// 是否正在注销
+    /// 设置数据
     /// </summary>
-    public bool Unregistering { get; private set; }
-
-    /// <summary>
-    /// 是否期望已注册状态
-    /// </summary>
-    public bool ExpectedRegistered { get; private set; } = true;
-
-    /// <summary>
-    /// 获取 redo key
-    /// </summary>
-    public string RedoKey => $"{Namespace}@@{Group}@@{ServiceName}";
-
-    /// <summary>
-    /// 私有构造函数
-    /// </summary>
-    private RedoData(string ns, string group, string serviceName)
-    {
-        Namespace = ns;
-        Group = group;
-        ServiceName = serviceName;
-    }
-
-    /// <summary>
-    /// 创建注册 redo 数据
-    /// </summary>
-    public static RedoData<T> CreateForRegister(string ns, string group, string serviceName, T? data = null)
-    {
-        return new RedoData<T>(ns, group, serviceName)
-        {
-            Data = data,
-            ExpectedRegistered = true
-        };
-    }
-
-    /// <summary>
-    /// 创建注销 redo 数据
-    /// </summary>
-    public static RedoData<T> CreateForUnregister(string ns, string group, string serviceName, T? data = null)
-    {
-        var result = new RedoData<T>(ns, group, serviceName)
-        {
-            Data = data,
-            Registered = true
-        };
-        result.SetUnregistering();
-        return result;
-    }
+    public void Set(T? data) => Data = data;
 
     /// <summary>
     /// 标记为已注册
@@ -88,53 +45,68 @@ public class RedoData<T> where T : class
     public void SetRegistered()
     {
         Registered = true;
+        Unregistering = false;
     }
 
     /// <summary>
-    /// 标记为未注册
+    /// 标记为已注销
     /// </summary>
     public void SetUnregistered()
     {
         Registered = false;
-    }
-
-    /// <summary>
-    /// 设置正在注销状态
-    /// </summary>
-    public void SetUnregistering()
-    {
-        ExpectedRegistered = false;
         Unregistering = true;
     }
 
     /// <summary>
-    /// 获取 redo 类型
+    /// 获取 Redo 类型 (不考虑期望状态)
+    /// <para>
+    /// 状态说明:
+    /// registered=true, unregistering=false: 已注册，不需要操作;
+    /// registered=true, unregistering=true: 已注册，需要注销;
+    /// registered=false, unregistering=false: 未注册，需要重新注册;
+    /// registered=false, unregistering=true: 未注册且不再继续注册
+    /// </para>
     /// </summary>
     public RedoType GetRedoType()
     {
-        if (ExpectedRegistered && !Registered)
+        if (Registered && !Unregistering)
         {
-            return RedoType.Register;
+            return ExpectedRegistered ? RedoType.None : RedoType.Unregister;
         }
-
-        if (!ExpectedRegistered && Registered && Unregistering)
+        else if (Registered && Unregistering)
         {
             return RedoType.Unregister;
         }
-
-        if (!ExpectedRegistered && !Registered && !Unregistering)
+        else if (!Registered && !Unregistering)
         {
-            return RedoType.Remove;
+            return RedoType.Register;
         }
-
-        return RedoType.None;
+        else
+        {
+            // !Registered && Unregistering
+            return ExpectedRegistered ? RedoType.Register : RedoType.Remove;
+        }
     }
 
     /// <summary>
-    /// 判断是否需要 redo
+    /// 判断是否需要 Redo
     /// </summary>
-    public bool IsNeedRedo()
+    public bool IsNeedRedo() => GetRedoType() != RedoType.None;
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj)
     {
-        return GetRedoType() != RedoType.None;
+        if (this == obj) return true;
+        if (obj == null || GetType() != obj.GetType()) return false;
+        var redoData = (RedoData<T>)obj;
+        return Registered == redoData.Registered &&
+               Unregistering == redoData.Unregistering &&
+               Equals(Data, redoData.Data);
+    }
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Registered, Unregistering, Data);
     }
 }

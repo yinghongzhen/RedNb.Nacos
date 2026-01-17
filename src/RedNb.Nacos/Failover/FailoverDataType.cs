@@ -1,17 +1,17 @@
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// 鏁呴殰杞Щ鏁版嵁绫诲瀷
+/// 故障转移数据类型
 /// </summary>
 public enum FailoverDataType
 {
     /// <summary>
-    /// 鍛藉悕鏈嶅姟鏁版嵁
+    /// 命名服务数据
     /// </summary>
     Naming,
 
     /// <summary>
-    /// 閰嶇疆鏈嶅姟鏁版嵁
+    /// 配置服务数据
     /// </summary>
     Config
 }

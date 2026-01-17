@@ -1,93 +1,93 @@
 namespace RedNb.Nacos.Monitor;
 
 /// <summary>
-/// æŒ‡æ ‡åç§°å¸¸é‡
+/// Ö¸±êÃû³Æ³£Á¿
 /// </summary>
 public static class MetricNames
 {
     /// <summary>
-    /// å‘½åç©ºé—´å‰ç¼€
+    /// ÃüÃû¿Õ¼äÇ°×º
     /// </summary>
     public const string Namespace = "nacos_client";
 
-    // ===== Gauge æŒ‡æ ‡ =====
+    // ===== Gauge Ö¸±ê =====
 
     /// <summary>
-    /// æœåŠ¡ä¿¡æ¯ç¼“å­˜æ•°é‡
+    /// ·şÎñĞÅÏ¢»º´æÊıÁ¿
     /// </summary>
     public const string ServiceInfoMapSize = "nacos_client_service_info_map_size";
 
     /// <summary>
-    /// ç›‘å¬å™¨é…ç½®æ•°é‡
+    /// ¼àÌıÆ÷ÅäÖÃÊıÁ¿
     /// </summary>
     public const string ListenConfigCount = "nacos_client_listen_config_count";
 
     /// <summary>
-    /// è¿æ¥çŠ¶æ€ (1=å·²è¿æ¥, 0=æœªè¿æ¥)
+    /// Á¬½Ó×´Ì¬ (1=ÒÑÁ¬½Ó, 0=Î´Á¬½Ó)
     /// </summary>
     public const string ConnectionStatus = "nacos_client_connection_status";
 
     /// <summary>
-    /// æ•…éšœè½¬ç§»æ˜¯å¦å¯ç”¨ (1=å¯ç”¨, 0=ç¦ç”¨)
+    /// ¹ÊÕÏ×ªÒÆÊÇ·ñÆôÓÃ (1=ÆôÓÃ, 0=½ûÓÃ)
     /// </summary>
     public const string FailoverEnabled = "nacos_client_failover_enabled";
 
-    // ===== Counter æŒ‡æ ‡ =====
+    // ===== Counter Ö¸±ê =====
 
     /// <summary>
-    /// é…ç½®è¯·æ±‚æˆåŠŸæ€»æ•°
+    /// ÅäÖÃÇëÇó³É¹¦×ÜÊı
     /// </summary>
     public const string ConfigRequestSuccessTotal = "nacos_client_config_request_success_total";
 
     /// <summary>
-    /// é…ç½®è¯·æ±‚å¤±è´¥æ€»æ•°
+    /// ÅäÖÃÇëÇóÊ§°Ü×ÜÊı
     /// </summary>
     public const string ConfigRequestFailedTotal = "nacos_client_config_request_failed_total";
 
     /// <summary>
-    /// å‘½åè¯·æ±‚æˆåŠŸæ€»æ•°
+    /// ÃüÃûÇëÇó³É¹¦×ÜÊı
     /// </summary>
     public const string NamingRequestSuccessTotal = "nacos_client_naming_request_success_total";
 
     /// <summary>
-    /// å‘½åè¯·æ±‚å¤±è´¥æ€»æ•°
+    /// ÃüÃûÇëÇóÊ§°Ü×ÜÊı
     /// </summary>
     public const string NamingRequestFailedTotal = "nacos_client_naming_request_failed_total";
 
     /// <summary>
-    /// æœåŠ¡å˜æ›´æ¨é€æ€»æ•°
+    /// ·şÎñ±ä¸üÍÆËÍ×ÜÊı
     /// </summary>
     public const string ServiceChangePushTotal = "nacos_client_service_change_push_total";
 
     /// <summary>
-    /// é…ç½®å˜æ›´æ¨é€æ€»æ•°
+    /// ÅäÖÃ±ä¸üÍÆËÍ×ÜÊı
     /// </summary>
     public const string ConfigChangePushTotal = "nacos_client_config_change_push_total";
 
     /// <summary>
-    /// é‡åšæ“ä½œæ€»æ•°
+    /// ÖØ×ö²Ù×÷×ÜÊı
     /// </summary>
     public const string RedoOperationTotal = "nacos_client_redo_operation_total";
 
     /// <summary>
-    /// æ•…éšœè½¬ç§»ä½¿ç”¨æ€»æ•°
+    /// ¹ÊÕÏ×ªÒÆÊ¹ÓÃ×ÜÊı
     /// </summary>
     public const string FailoverUsedTotal = "nacos_client_failover_used_total";
 
-    // ===== Histogram æŒ‡æ ‡ =====
+    // ===== Histogram Ö¸±ê =====
 
     /// <summary>
-    /// è¯·æ±‚å»¶è¿Ÿç›´æ–¹å›¾
+    /// ÇëÇóÑÓ³ÙÖ±·½Í¼
     /// </summary>
     public const string RequestLatency = "nacos_client_request_latency";
 
     /// <summary>
-    /// é…ç½®è¯·æ±‚å»¶è¿Ÿç›´æ–¹å›¾
+    /// ÅäÖÃÇëÇóÑÓ³ÙÖ±·½Í¼
     /// </summary>
     public const string ConfigRequestLatency = "nacos_client_config_request_latency";
 
     /// <summary>
-    /// å‘½åè¯·æ±‚å»¶è¿Ÿç›´æ–¹å›¾
+    /// ÃüÃûÇëÇóÑÓ³ÙÖ±·½Í¼
     /// </summary>
     public const string NamingRequestLatency = "nacos_client_naming_request_latency";
 }
