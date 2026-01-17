@@ -5,6 +5,8 @@ using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Naming;
 using RedNb.Nacos.Core.Naming.FuzzyWatch;
 using RedNb.Nacos.Core.Naming.Selector;
+using RedNb.Nacos.Failover;
+using RedNb.Nacos.Monitor;
 using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Naming;
@@ -21,6 +23,8 @@ public class NacosNamingService : INamingService
     private readonly InstancesChangeNotifier _changeNotifier;
     private readonly BeatReactor _beatReactor;
     private readonly NamingFuzzyWatchManager _fuzzyWatchManager;
+    private readonly NamingFailoverReactor? _failoverReactor;
+    private readonly MetricsMonitor _metricsMonitor;
     private readonly CancellationTokenSource _cts;
     private readonly Dictionary<string, Action<IInstancesChangeEvent>> _selectorListeners = new();
     private bool _disposed;
@@ -33,6 +37,14 @@ public class NacosNamingService : INamingService
     private const string BeatApiPath = "v1/ns/instance/beat";
 
     public NacosNamingService(NacosClientOptions options, ILogger<NacosNamingService>? logger = null)
+        : this(options, null, logger)
+    {
+    }
+
+    public NacosNamingService(
+        NacosClientOptions options, 
+        IFailoverDataSource<ServiceInfo>? failoverDataSource,
+        ILogger<NacosNamingService>? logger = null)
     {
         _options = options;
         _logger = logger;
@@ -41,10 +53,38 @@ public class NacosNamingService : INamingService
         _changeNotifier = new InstancesChangeNotifier();
         _beatReactor = new BeatReactor(this, options, logger);
         _fuzzyWatchManager = new NamingFuzzyWatchManager(logger);
+        _metricsMonitor = MetricsMonitor.Default;
         _cts = new CancellationTokenSource();
+
+        // Initialize failover reactor if data source is provided
+        if (failoverDataSource != null && logger != null)
+        {
+            _failoverReactor = new NamingFailoverReactor(
+                logger, 
+                failoverDataSource,
+                () => GetServiceInfoMap(),
+                "http");
+            _failoverReactor.Init();
+        }
+
+        // Update connection status
+        _metricsMonitor.SetConnectionStatus(true);
 
         // Start service info update task
         _ = StartServiceInfoUpdateTaskAsync(_cts.Token);
+    }
+
+    /// <summary>
+    /// Gets the internal service info map for failover reactor.
+    /// </summary>
+    private System.Collections.Concurrent.ConcurrentDictionary<string, ServiceInfo> GetServiceInfoMap()
+    {
+        var map = new System.Collections.Concurrent.ConcurrentDictionary<string, ServiceInfo>();
+        foreach (var info in _serviceInfoHolder.GetAllServiceInfos())
+        {
+            map[info.Key] = info;
+        }
+        return map;
     }
 
     #region Registration
@@ -251,6 +291,17 @@ public class NacosNamingService : INamingService
 
         ServiceInfo? serviceInfo;
 
+        // Check failover first
+        if (_failoverReactor != null && _failoverReactor.IsFailoverSwitch(ServiceInfo.GetKey(
+            $"{groupName}{NacosConstants.ServiceInfoSplitter}{serviceName}", clusterString)))
+        {
+            serviceInfo = _failoverReactor.GetService(ServiceInfo.GetKey(
+                $"{groupName}{NacosConstants.ServiceInfoSplitter}{serviceName}", clusterString));
+            _metricsMonitor.RecordFailoverUsed();
+            _logger?.LogDebug("Using failover data for service {Service}@{Group}", serviceName, groupName);
+            return serviceInfo?.Hosts ?? new List<Instance>();
+        }
+
         if (subscribe)
         {
             // Try to get from cache first
@@ -261,6 +312,7 @@ public class NacosNamingService : INamingService
                 if (serviceInfo != null)
                 {
                     _serviceInfoHolder.ProcessServiceInfo(serviceInfo);
+                    _metricsMonitor.SetServiceInfoMapSize(_serviceInfoHolder.GetAllServiceInfos().Count());
                 }
             }
         }
@@ -731,16 +783,28 @@ public class NacosNamingService : INamingService
 
             if (string.IsNullOrEmpty(response))
             {
+                _metricsMonitor.RecordNamingRequestFailed();
                 return null;
             }
 
             _isHealthy = true;
+            _metricsMonitor.SetConnectionStatus(true);
+            _metricsMonitor.RecordNamingRequestSuccess();
             return JsonSerializer.Deserialize<ServiceInfo>(response);
         }
         catch (Exception ex)
         {
             _logger?.LogWarning(ex, "Failed to query service {Service}@{Group}", serviceName, groupName);
             _isHealthy = false;
+            _metricsMonitor.SetConnectionStatus(false);
+            _metricsMonitor.RecordNamingRequestFailed();
+            
+            // Update failover status
+            if (_failoverReactor != null)
+            {
+                _metricsMonitor.SetFailoverEnabled(_failoverReactor.IsFailoverSwitch());
+            }
+            
             return null;
         }
     }
@@ -816,6 +880,9 @@ public class NacosNamingService : INamingService
         {
             changeEvent.AddedInstances = newInfo.Hosts;
         }
+
+        // Record service change push metric
+        _metricsMonitor.RecordServiceChangePush();
 
         _changeNotifier.NotifyListeners(serviceName, groupName, clusters, changeEvent);
     }
@@ -902,7 +969,9 @@ public class NacosNamingService : INamingService
         await _cts.CancelAsync();
         _cts.Dispose();
         _beatReactor.Dispose();
+        _failoverReactor?.Dispose();
         _httpClient.Dispose();
+        _metricsMonitor.SetConnectionStatus(false);
         _disposed = true;
     }
 

@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging;
 namespace RedNb.Nacos.Failover;
 
 /// <summary>
-/// ¹ÊÕÏ×ªÒÆ·´Ó¦Æ÷
-/// ¸ºÔğ¶¨ÆÚË¢ĞÂ¹ÊÕÏ×ªÒÆÊı¾İ²¢ÔÚĞèÒªÊ±Ìá¹©±¾µØ»º´æ
+/// ï¿½ï¿½ï¿½ï¿½×ªï¿½Æ·ï¿½Ó¦ï¿½ï¿½
+/// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½Â¹ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½İ²ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÊ±ï¿½á¹©ï¿½ï¿½ï¿½Ø»ï¿½ï¿½ï¿½
 /// </summary>
-/// <typeparam name="T">Êı¾İÀàĞÍ</typeparam>
+/// <typeparam name="T">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</typeparam>
 public class FailoverReactor<T> : IDisposable where T : class
 {
     private readonly ILogger _logger;
@@ -21,16 +21,16 @@ public class FailoverReactor<T> : IDisposable where T : class
     private FailoverSwitch _failoverSwitch = FailoverSwitch.CreateDisabled();
 
     /// <summary>
-    /// µ±¹ÊÕÏ×ªÒÆÊı¾İ±ä¸üÊ±´¥·¢
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public event EventHandler<FailoverDataChangedEventArgs<T>>? DataChanged;
 
     /// <summary>
-    /// ¹¹Ôìº¯Êı
+    /// ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½
     /// </summary>
-    /// <param name="logger">ÈÕÖ¾¼ÇÂ¼Æ÷</param>
-    /// <param name="dataSource">Êı¾İÔ´£¬¿ÉÎªnullÔò½öÊ¹ÓÃÊÖ¶¯ÉèÖÃµÄÊı¾İ</param>
-    /// <param name="refreshIntervalMs">Ë¢ĞÂ¼ä¸ô£¨ºÁÃë£©</param>
+    /// <param name="logger">ï¿½ï¿½Ö¾ï¿½ï¿½Â¼ï¿½ï¿½</param>
+    /// <param name="dataSource">ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½Îªnullï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½</param>
+    /// <param name="refreshIntervalMs">Ë¢ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë£©</param>
     public FailoverReactor(ILogger logger, IFailoverDataSource<T>? dataSource = null, int refreshIntervalMs = 5000)
     {
         _logger = logger;
@@ -39,12 +39,12 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// »ñÈ¡¹ÊÕÏ×ªÒÆÊÇ·ñÆôÓÃ
+    /// ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public bool IsFailoverEnabled => _failoverSwitch.Enabled;
 
     /// <summary>
-    /// Æô¶¯¹ÊÕÏ×ªÒÆ·´Ó¦Æ÷
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Æ·ï¿½Ó¦ï¿½ï¿½
     /// </summary>
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -61,7 +61,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// Í£Ö¹¹ÊÕÏ×ªÒÆ·´Ó¦Æ÷
+    /// Í£Ö¹ï¿½ï¿½ï¿½ï¿½×ªï¿½Æ·ï¿½Ó¦ï¿½ï¿½
     /// </summary>
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
@@ -74,14 +74,14 @@ public class FailoverReactor<T> : IDisposable where T : class
             }
             catch (OperationCanceledException)
             {
-                // Ô¤ÆÚµÄÈ¡Ïû
+                // Ô¤ï¿½Úµï¿½È¡ï¿½ï¿½
             }
         }
         _logger.LogInformation("Failover reactor stopped");
     }
 
     /// <summary>
-    /// »ñÈ¡¹ÊÕÏ×ªÒÆÊı¾İ
+    /// ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public T? GetFailoverData(string key)
     {
@@ -100,7 +100,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// ³¢ÊÔ»ñÈ¡¹ÊÕÏ×ªÒÆÊı¾İ
+    /// ï¿½ï¿½ï¿½Ô»ï¿½È¡ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public bool TryGetFailoverData(string key, out T? data)
     {
@@ -122,21 +122,22 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// ÊÖ¶¯ÉèÖÃ¹ÊÕÏ×ªÒÆÊı¾İ
+    /// æ‰‹åŠ¨è®¾ç½®æ•…éšœè½¬ç§»æ•°æ®
     /// </summary>
     public void SetFailoverData(string key, FailoverData<T> data)
     {
-        var oldData = _failoverDataCache.AddOrUpdate(key, data, (_, _) => data);
+        FailoverData<T>? oldData = null;
+        _failoverDataCache.TryGetValue(key, out oldData);
+        
+        _failoverDataCache.AddOrUpdate(key, data, (_, _) => data);
         _logger.LogDebug("Set failover data for key: {Key}", key);
 
-        if (oldData.Data != data.Data)
-        {
-            OnDataChanged(new FailoverDataChangedEventArgs<T>(key, oldData, data));
-        }
+        // å§‹ç»ˆè§¦å‘äº‹ä»¶ï¼Œæ— è®ºæ˜¯æ–°å¢è¿˜æ˜¯æ›´æ–°
+        OnDataChanged(new FailoverDataChangedEventArgs<T>(key, oldData, data));
     }
 
     /// <summary>
-    /// ÒÆ³ı¹ÊÕÏ×ªÒÆÊı¾İ
+    /// ç§»é™¤æ•…éšœè½¬ç§»æ•°æ®
     /// </summary>
     public void RemoveFailoverData(string key)
     {
@@ -148,7 +149,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// ÉèÖÃ¹ÊÕÏ×ªÒÆ¿ª¹Ø
+    /// ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½×ªï¿½Æ¿ï¿½ï¿½ï¿½
     /// </summary>
     public void SetFailoverSwitch(bool enabled)
     {
@@ -165,7 +166,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// Ë¢ĞÂÑ­»·
+    /// Ë¢ï¿½ï¿½Ñ­ï¿½ï¿½
     /// </summary>
     private async Task RefreshLoopAsync(CancellationToken cancellationToken)
     {
@@ -188,7 +189,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// Ë¢ĞÂ¹ÊÕÏ×ªÒÆÊı¾İ
+    /// Ë¢ï¿½Â¹ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     private void RefreshFailoverData()
     {
@@ -199,7 +200,7 @@ public class FailoverReactor<T> : IDisposable where T : class
 
         try
         {
-            // Ë¢ĞÂ¿ª¹Ø×´Ì¬
+            // Ë¢ï¿½Â¿ï¿½ï¿½ï¿½×´Ì¬
             var switchData = _dataSource.GetSwitch();
             lock (_lockObj)
             {
@@ -211,7 +212,7 @@ public class FailoverReactor<T> : IDisposable where T : class
                 }
             }
 
-            // Ë¢ĞÂ¹ÊÕÏ×ªÒÆÊı¾İ
+            // Ë¢ï¿½Â¹ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (_failoverSwitch.Enabled)
             {
                 var newData = _dataSource.GetFailoverData();
@@ -224,7 +225,7 @@ public class FailoverReactor<T> : IDisposable where T : class
                     }
                 }
 
-                // ÒÆ³ı²»ÔÙ´æÔÚµÄÊı¾İ
+                // ï¿½Æ³ï¿½ï¿½ï¿½ï¿½Ù´ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½
                 var keysToRemove = _failoverDataCache.Keys.Except(newData.Keys).ToList();
                 foreach (var key in keysToRemove)
                 {
@@ -242,7 +243,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// ´¥·¢Êı¾İ±ä¸üÊÂ¼ş
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½ï¿½Â¼ï¿½
     /// </summary>
     protected virtual void OnDataChanged(FailoverDataChangedEventArgs<T> e)
     {
@@ -250,7 +251,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     }
 
     /// <summary>
-    /// ÊÍ·Å×ÊÔ´
+    /// ï¿½Í·ï¿½ï¿½ï¿½Ô´
     /// </summary>
     public void Dispose()
     {
@@ -261,28 +262,28 @@ public class FailoverReactor<T> : IDisposable where T : class
 }
 
 /// <summary>
-/// ¹ÊÕÏ×ªÒÆÊı¾İ±ä¸üÊÂ¼ş²ÎÊı
+/// ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½İ±ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½
 /// </summary>
-/// <typeparam name="T">Êı¾İÀàĞÍ</typeparam>
+/// <typeparam name="T">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</typeparam>
 public class FailoverDataChangedEventArgs<T> : EventArgs where T : class
 {
     /// <summary>
-    /// Êı¾İ¼ü
+    /// ï¿½ï¿½ï¿½İ¼ï¿½
     /// </summary>
     public string Key { get; }
 
     /// <summary>
-    /// ¾ÉÊı¾İ
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public FailoverData<T>? OldData { get; }
 
     /// <summary>
-    /// ĞÂÊı¾İ
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     public FailoverData<T>? NewData { get; }
 
     /// <summary>
-    /// ¹¹Ôìº¯Êı
+    /// ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½
     /// </summary>
     public FailoverDataChangedEventArgs(string key, FailoverData<T>? oldData, FailoverData<T>? newData)
     {

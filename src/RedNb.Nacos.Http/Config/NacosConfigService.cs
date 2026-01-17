@@ -6,6 +6,7 @@ using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Config;
 using RedNb.Nacos.Core.Config.Filter;
 using RedNb.Nacos.Core.Config.FuzzyWatch;
+using RedNb.Nacos.Monitor;
 using RedNb.Nacos.Utils;
 
 namespace RedNb.Nacos.Client.Config;
@@ -22,6 +23,7 @@ public class NacosConfigService : IConfigService
     private readonly LocalConfigCache _localCache;
     private readonly ConfigFilterChainManager _filterChainManager;
     private readonly FuzzyWatchManager _fuzzyWatchManager;
+    private readonly MetricsMonitor _metricsMonitor;
     private readonly CancellationTokenSource _cts;
     private bool _disposed;
     private bool _isHealthy = true;
@@ -38,7 +40,11 @@ public class NacosConfigService : IConfigService
         _localCache = new LocalConfigCache(options);
         _filterChainManager = new ConfigFilterChainManager();
         _fuzzyWatchManager = new FuzzyWatchManager(logger);
+        _metricsMonitor = MetricsMonitor.Default;
         _cts = new CancellationTokenSource();
+
+        // Update connection status
+        _metricsMonitor.SetConnectionStatus(true);
 
         // Start long polling for config changes
         _ = StartLongPollingAsync(_cts.Token);
@@ -65,6 +71,8 @@ public class NacosConfigService : IConfigService
             {
                 _localCache.SaveSnapshot(dataId, group, content);
                 _isHealthy = true;
+                _metricsMonitor.SetConnectionStatus(true);
+                _metricsMonitor.RecordConfigRequestSuccess();
                 
                 // Apply filter chain for decryption
                 content = await ApplyGetFilterAsync(dataId, group, content, cancellationToken);
@@ -74,12 +82,15 @@ public class NacosConfigService : IConfigService
         }
         catch (NacosException ex) when (ex.ErrorCode == NacosException.NotFound)
         {
+            _metricsMonitor.RecordConfigRequestSuccess(); // 404 is still a successful response
             return null;
         }
         catch (Exception ex)
         {
             _logger?.LogWarning(ex, "Failed to get config from server, trying local cache");
             _isHealthy = false;
+            _metricsMonitor.SetConnectionStatus(false);
+            _metricsMonitor.RecordConfigRequestFailed();
             
             // Try to get from local cache
             var cached = _localCache.GetSnapshot(dataId, group);
@@ -110,6 +121,7 @@ public class NacosConfigService : IConfigService
         ValidateParams(dataId, group);
         
         _listenerManager.AddListener(dataId, group, GetTenant(), listener);
+        _metricsMonitor.SetListenConfigCount(_listenerManager.GetListeningConfigs().Count);
         _logger?.LogDebug("Added listener for {DataId}@{Group}", dataId, group);
         
         // Initialize MD5 for the listener to enable proper change detection
@@ -130,6 +142,7 @@ public class NacosConfigService : IConfigService
     {
         group = GetGroupOrDefault(group);
         _listenerManager.RemoveListener(dataId, group, GetTenant(), listener);
+        _metricsMonitor.SetListenConfigCount(_listenerManager.GetListeningConfigs().Count);
         _logger?.LogDebug("Removed listener for {DataId}@{Group}", dataId, group);
     }
 
@@ -163,17 +176,31 @@ public class NacosConfigService : IConfigService
         }
 
         var body = NacosUtils.BuildQueryString(parameters);
-        var response = await _httpClient.PostAsync(ConfigApiPath, null, body, 
-            _options.DefaultTimeout, cancellationToken);
-
-        var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
         
-        if (result)
+        try
         {
-            _logger?.LogInformation("Published config {DataId}@{Group}", dataId, group);
-        }
+            var response = await _httpClient.PostAsync(ConfigApiPath, null, body, 
+                _options.DefaultTimeout, cancellationToken);
 
-        return result;
+            var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+            
+            if (result)
+            {
+                _metricsMonitor.RecordConfigRequestSuccess();
+                _logger?.LogInformation("Published config {DataId}@{Group}", dataId, group);
+            }
+            else
+            {
+                _metricsMonitor.RecordConfigRequestFailed();
+            }
+
+            return result;
+        }
+        catch
+        {
+            _metricsMonitor.RecordConfigRequestFailed();
+            throw;
+        }
     }
 
     public async Task<bool> PublishConfigCasAsync(string dataId, string group, string content, string casMd5, 
@@ -218,18 +245,31 @@ public class NacosConfigService : IConfigService
             { "tenant", GetTenant() }
         };
 
-        var response = await _httpClient.DeleteAsync(ConfigApiPath, parameters, 
-            _options.DefaultTimeout, cancellationToken);
-
-        var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-        
-        if (result)
+        try
         {
-            _localCache.RemoveSnapshot(dataId, group);
-            _logger?.LogInformation("Removed config {DataId}@{Group}", dataId, group);
-        }
+            var response = await _httpClient.DeleteAsync(ConfigApiPath, parameters, 
+                _options.DefaultTimeout, cancellationToken);
 
-        return result;
+            var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+            
+            if (result)
+            {
+                _localCache.RemoveSnapshot(dataId, group);
+                _metricsMonitor.RecordConfigRequestSuccess();
+                _logger?.LogInformation("Removed config {DataId}@{Group}", dataId, group);
+            }
+            else
+            {
+                _metricsMonitor.RecordConfigRequestFailed();
+            }
+
+            return result;
+        }
+        catch
+        {
+            _metricsMonitor.RecordConfigRequestFailed();
+            throw;
+        }
     }
 
     public string GetServerStatus()
@@ -455,6 +495,7 @@ public class NacosConfigService : IConfigService
                 try
                 {
                     listener.OnReceiveConfigInfo(configInfo);
+                    _metricsMonitor.RecordConfigChangePush();
                 }
                 catch (Exception ex)
                 {
@@ -574,6 +615,8 @@ public class NacosConfigService : IConfigService
         await _cts.CancelAsync();
         _cts.Dispose();
         _httpClient.Dispose();
+        _metricsMonitor.SetConnectionStatus(false);
+        _metricsMonitor.SetListenConfigCount(0);
         _disposed = true;
     }
 }
