@@ -5,14 +5,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>1.0.0</Version>
+    <Version>1.0.3</Version>
     <Authors>RedNb</Authors>
     <Description>Nacos .NET SDK All-in-One - Meta package that includes all Nacos SDK components for easy installation</Description>
     <PackageTags>nacos;service-discovery;config;microservices;all-in-one</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/redNb/RedNb.Nacos</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/redNb/RedNb.Nacos</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <!-- This is a meta package - no source code -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!-- Reference all main packages -->
   <ItemGroup>
