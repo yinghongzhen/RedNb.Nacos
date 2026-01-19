@@ -73,8 +73,8 @@ dotnet add package RedNb.Nacos.AspNetCore
 #### 1. 直接使用工厂创建服务
 
 ```csharp
-using RedNb.Nacos;
-using RedNb.Nacos.Http;
+using RedNb.Nacos.Client;
+using RedNb.Nacos.Core;
 
 // 配置选项
 var options = new NacosClientOptions
@@ -87,7 +87,7 @@ var options = new NacosClientOptions
 };
 
 // 创建服务工厂
-var factory = new NacosHttpFactory();
+var factory = new NacosFactory();
 
 // 获取各种服务
 var configService = factory.CreateConfigService(options);
@@ -303,10 +303,10 @@ builder.Services.AddNacos(options =>
 });
 
 // 或只注册配置服务
-builder.Services.AddNacosConfigService(options => { ... });
+builder.Services.AddNacosConfig(options => { /* ... */ });
 
 // 或只注册命名服务
-builder.Services.AddNacosNamingService(options => { ... });
+builder.Services.AddNacosNaming(options => { /* ... */ });
 
 // 添加健康检查
 builder.Services.AddHealthChecks()
