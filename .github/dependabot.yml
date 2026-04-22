@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+      aspire:
+        patterns:
+          - "Aspire.*"
+      opentelemetry:
+        patterns:
+          - "OpenTelemetry*"
+      testcontainers:
+        patterns:
+          - "Testcontainers*"
+      xunit:
+        patterns:
+          - "xunit*"
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+      microsoft-net-test:
+        patterns:
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet*"
+          - "Microsoft.AspNetCore.Mvc.Testing"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10

@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using RedNb.Nacos.Core.Config;
 using RedNb.Nacos.Client.Config;
+using RedNb.Nacos.Core.Config;
 
 namespace RedNb.Nacos.AspNetCore.Configuration;
 

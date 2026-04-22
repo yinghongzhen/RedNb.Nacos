@@ -31,9 +31,12 @@ public abstract class NamingRedoData<T> : RedoData<T>
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        if (this == obj) return true;
-        if (obj == null || GetType() != obj.GetType()) return false;
-        if (!base.Equals(obj)) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || GetType() != obj.GetType())
+            return false;
+        if (!base.Equals(obj))
+            return false;
         var redoData = (NamingRedoData<T>)obj;
         return ServiceName == redoData.ServiceName && GroupName == redoData.GroupName;
     }

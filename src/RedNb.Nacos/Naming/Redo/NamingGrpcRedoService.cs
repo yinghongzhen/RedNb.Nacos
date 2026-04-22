@@ -22,7 +22,7 @@ public class NamingGrpcRedoService : IDisposable
     private readonly ConcurrentDictionary<string, SubscriberRedoData> _subscribes = new();
     private readonly object _instanceLock = new();
     private readonly object _subscribeLock = new();
-    
+
     private readonly long _redoDelayTime;
     private readonly CancellationTokenSource _cts = new();
     private Task? _redoTask;
@@ -61,7 +61,7 @@ public class NamingGrpcRedoService : IDisposable
                 try
                 {
                     await Task.Delay((int)_redoDelayTime, _cts.Token);
-                    
+
                     if (!IsConnected)
                     {
                         _logger.LogWarning("Grpc Connection is disconnect, skip current redo task");

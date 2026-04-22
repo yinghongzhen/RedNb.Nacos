@@ -22,17 +22,17 @@ public class NacosGrpcClient : IAsyncDisposable
     private readonly ILogger? _logger;
     private readonly string _clientId;
     private readonly JsonSerializerOptions _jsonOptions;
-    
+
     private GrpcChannel? _channel;
     private RequestService.RequestServiceClient? _requestClient;
     private BiRequestStream.BiRequestStreamClient? _biStreamClient;
     private AsyncDuplexStreamingCall<Payload, Payload>? _biStream;
-    
+
     private readonly CancellationTokenSource _cts;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
     private readonly ConcurrentDictionary<string, Action<string, string>> _pushHandlers = new();
     private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingRequests = new();
-    
+
     private volatile bool _connected;
     private volatile bool _disposed;
     private string? _currentServer;
@@ -63,7 +63,7 @@ public class NacosGrpcClient : IAsyncDisposable
         _clientId = Guid.NewGuid().ToString("N");
         _cts = new CancellationTokenSource();
         _lastActiveTime = DateTime.UtcNow;
-        
+
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -92,12 +92,14 @@ public class NacosGrpcClient : IAsyncDisposable
     /// </summary>
     public async Task ConnectAsync(CancellationToken cancellationToken = default)
     {
-        if (_connected) return;
+        if (_connected)
+            return;
 
         await _connectionLock.WaitAsync(cancellationToken);
         try
         {
-            if (_connected) return;
+            if (_connected)
+                return;
             await ConnectInternalAsync(cancellationToken);
         }
         finally
@@ -151,8 +153,8 @@ public class NacosGrpcClient : IAsyncDisposable
                 _currentServer = server;
                 _connected = true;
                 _lastActiveTime = DateTime.UtcNow;
-                
-                _logger?.LogInformation("Connected to Nacos gRPC server at {Address}, ConnectionId: {ConnectionId}", 
+
+                _logger?.LogInformation("Connected to Nacos gRPC server at {Address}, ConnectionId: {ConnectionId}",
                     address, _connectionId);
                 return;
             }
@@ -164,23 +166,23 @@ public class NacosGrpcClient : IAsyncDisposable
             }
         }
 
-        throw new NacosException(NacosException.ServerError, 
+        throw new NacosException(NacosException.ServerError,
             $"Failed to connect to any Nacos gRPC server: {lastException?.Message}", lastException!);
     }
 
     /// <summary>
     /// Sends a request and waits for response.
     /// </summary>
-    public async Task<TResponse?> RequestAsync<TResponse>(string type, object request, 
+    public async Task<TResponse?> RequestAsync<TResponse>(string type, object request,
         CancellationToken cancellationToken = default) where TResponse : class
     {
         await EnsureConnectedAsync(cancellationToken);
 
         var payload = CreatePayload(type, request);
-        
+
         try
         {
-            var response = await _requestClient!.SendRequestAsync(payload, 
+            var response = await _requestClient!.SendRequestAsync(payload,
                 deadline: DateTime.UtcNow.AddMilliseconds(_options.DefaultTimeout),
                 cancellationToken: cancellationToken);
 
@@ -193,7 +195,7 @@ public class NacosGrpcClient : IAsyncDisposable
 
             var json = response.Body.Value.ToStringUtf8();
             _logger?.LogDebug("Received response for {Type}: {Response}", type, json);
-            
+
             return JsonSerializer.Deserialize<TResponse>(json, _jsonOptions);
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
@@ -207,13 +209,13 @@ public class NacosGrpcClient : IAsyncDisposable
     /// <summary>
     /// Sends a request through the bi-directional stream.
     /// </summary>
-    public async Task SendStreamRequestAsync(string type, object request, 
+    public async Task SendStreamRequestAsync(string type, object request,
         CancellationToken cancellationToken = default)
     {
         await EnsureConnectedAsync(cancellationToken);
 
         var payload = CreatePayload(type, request);
-        
+
         try
         {
             await _biStream!.RequestStream.WriteAsync(payload, cancellationToken);
@@ -237,9 +239,9 @@ public class NacosGrpcClient : IAsyncDisposable
 
         var requestId = Guid.NewGuid().ToString("N");
         var tcs = new TaskCompletionSource<string>();
-        
+
         _pendingRequests.TryAdd(requestId, tcs);
-        
+
         try
         {
             // Set request ID if the request has it
@@ -297,8 +299,8 @@ public class NacosGrpcClient : IAsyncDisposable
     {
         var request = new ServerCheckRequest();
         var payload = CreatePayload(ServerCheckRequest.TYPE, request);
-        
-        var response = await _requestClient!.SendRequestAsync(payload, 
+
+        var response = await _requestClient!.SendRequestAsync(payload,
             deadline: DateTime.UtcNow.AddMilliseconds(ConnectionTimeoutMs),
             cancellationToken: cancellationToken);
 
@@ -349,7 +351,7 @@ public class NacosGrpcClient : IAsyncDisposable
                 { "module", "config" }
             }
         };
-        
+
         var payload = CreatePayload(ConnectionSetupRequest.TYPE, setupRequest);
         await _biStream.RequestStream.WriteAsync(payload, cancellationToken);
 
@@ -421,7 +423,7 @@ public class NacosGrpcClient : IAsyncDisposable
         {
             // Ignore parsing errors
         }
-        
+
         return false;
     }
 
@@ -477,7 +479,8 @@ public class NacosGrpcClient : IAsyncDisposable
             {
                 await Task.Delay(KeepAliveIntervalMs, cancellationToken);
 
-                if (!_connected) continue;
+                if (!_connected)
+                    continue;
 
                 // Check if we need to send health check
                 if ((DateTime.UtcNow - _lastActiveTime).TotalMilliseconds > KeepAliveIntervalMs)
@@ -502,7 +505,7 @@ public class NacosGrpcClient : IAsyncDisposable
         {
             var request = new HealthCheckRequest();
             var response = await RequestAsync<HealthCheckResponse>(HealthCheckRequest.TYPE, request, cancellationToken);
-            
+
             if (response?.IsSuccess == true)
             {
                 _lastActiveTime = DateTime.UtcNow;
@@ -526,8 +529,8 @@ public class NacosGrpcClient : IAsyncDisposable
             {
                 Type = type,
                 ClientIp = GetLocalIp(),
-                Headers = 
-                { 
+                Headers =
+                {
                     { "connectionId", _connectionId ?? _clientId },
                     { "clientId", _clientId }
                 }
@@ -545,7 +548,7 @@ public class NacosGrpcClient : IAsyncDisposable
         {
             await ConnectAsync(cancellationToken);
         }
-        
+
         if (!_connected)
         {
             throw new NacosException(NacosException.ClientDisconnect, "Not connected to Nacos server");
@@ -555,7 +558,7 @@ public class NacosGrpcClient : IAsyncDisposable
     private async Task CleanupConnectionAsync()
     {
         _connected = false;
-        
+
         try
         {
             if (_biStream != null)
@@ -585,7 +588,7 @@ public class NacosGrpcClient : IAsyncDisposable
         {
             var hostName = System.Net.Dns.GetHostName();
             var addresses = System.Net.Dns.GetHostAddresses(hostName);
-            var ipv4 = addresses.FirstOrDefault(a => 
+            var ipv4 = addresses.FirstOrDefault(a =>
                 a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
                 !System.Net.IPAddress.IsLoopback(a));
             return ipv4?.ToString() ?? "127.0.0.1";
@@ -598,23 +601,28 @@ public class NacosGrpcClient : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         await _cts.CancelAsync();
-        
+
         // Wait for background tasks
         if (_keepAliveTask != null)
         {
-            try { await _keepAliveTask.WaitAsync(TimeSpan.FromSeconds(2)); } catch { /* Ignore */ }
+            try
+            { await _keepAliveTask.WaitAsync(TimeSpan.FromSeconds(2)); }
+            catch { /* Ignore */ }
         }
         if (_receiveTask != null)
         {
-            try { await _receiveTask.WaitAsync(TimeSpan.FromSeconds(2)); } catch { /* Ignore */ }
+            try
+            { await _receiveTask.WaitAsync(TimeSpan.FromSeconds(2)); }
+            catch { /* Ignore */ }
         }
 
         await CleanupConnectionAsync();
-        
+
         _cts.Dispose();
         _connectionLock.Dispose();
     }

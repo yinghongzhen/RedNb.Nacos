@@ -14,7 +14,7 @@ public class SecurityProxy : IDisposable
     private readonly ILogger? _logger;
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _loginLock = new(1, 1);
-    
+
     private string? _accessToken;
     private long _tokenTtl;
     private long _lastRefreshTime;
@@ -120,13 +120,14 @@ public class SecurityProxy : IDisposable
             }
         }
 
-        throw new NacosException(NacosException.NoRight, 
+        throw new NacosException(NacosException.NoRight,
             $"Failed to login to Nacos server: {lastException?.Message}", lastException!);
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _httpClient.Dispose();
         _loginLock.Dispose();
         _disposed = true;

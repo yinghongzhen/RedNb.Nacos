@@ -216,9 +216,12 @@ internal class NamingServiceInfoHolder
 
     private static bool MetadataEquals(Dictionary<string, string>? m1, Dictionary<string, string>? m2)
     {
-        if (m1 == null && m2 == null) return true;
-        if (m1 == null || m2 == null) return false;
-        if (m1.Count != m2.Count) return false;
+        if (m1 == null && m2 == null)
+            return true;
+        if (m1 == null || m2 == null)
+            return false;
+        if (m1.Count != m2.Count)
+            return false;
         return m1.All(kvp => m2.TryGetValue(kvp.Key, out var value) && value == kvp.Value);
     }
 

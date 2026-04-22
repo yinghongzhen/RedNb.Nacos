@@ -1,9 +1,9 @@
-using RedNb.Nacos.DependencyInjection;
 using RedNb.Nacos.AspNetCore.Configuration;
 using RedNb.Nacos.AspNetCore.HealthChecks;
 using RedNb.Nacos.AspNetCore.ServiceRegistry;
 using RedNb.Nacos.Core;
 using RedNb.Nacos.Core.Naming;
+using RedNb.Nacos.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

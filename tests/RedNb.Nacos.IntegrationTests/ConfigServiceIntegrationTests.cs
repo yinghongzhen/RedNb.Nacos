@@ -159,7 +159,7 @@ public class ConfigServiceIntegrationTests : IAsyncLifetime
         var group = "DEFAULT_GROUP";
         var content1 = "initial content";
         var content2 = "updated content";
-        
+
         var tcs = new TaskCompletionSource<ConfigInfo>();
         var listener = new TestConfigChangeListener(info =>
         {

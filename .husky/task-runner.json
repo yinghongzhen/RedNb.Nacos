@@ -1,0 +1,27 @@
+{
+   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+   "tasks": [
+      {
+         "name": "format-check",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": [ "format", "--verify-no-changes", "--verbosity", "minimal", "--include", "${staged}" ],
+         "include": [ "*.cs" ],
+         "output": "always"
+      },
+      {
+         "name": "build-check",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": [ "build", "--no-restore", "--verbosity", "quiet" ],
+         "output": "always"
+      },
+      {
+         "name": "commit-message-lint",
+         "group": "commit-msg",
+         "command": "dotnet",
+         "args": [ "husky", "exec", ".husky/csx/commit-lint.csx", "--args", "${args}" ],
+         "output": "always"
+      }
+   ]
+}

@@ -42,7 +42,7 @@ public class NacosNamingService : INamingService
     }
 
     public NacosNamingService(
-        NacosClientOptions options, 
+        NacosClientOptions options,
         IFailoverDataSource<ServiceInfo>? failoverDataSource,
         ILogger<NacosNamingService>? logger = null)
     {
@@ -60,7 +60,7 @@ public class NacosNamingService : INamingService
         if (failoverDataSource != null && logger != null)
         {
             _failoverReactor = new NamingFailoverReactor(
-                logger, 
+                logger,
                 failoverDataSource,
                 () => GetServiceInfoMap(),
                 "http");
@@ -89,27 +89,27 @@ public class NacosNamingService : INamingService
 
     #region Registration
 
-    public Task RegisterInstanceAsync(string serviceName, string ip, int port, 
+    public Task RegisterInstanceAsync(string serviceName, string ip, int port,
         CancellationToken cancellationToken = default)
     {
-        return RegisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, ip, port, 
+        return RegisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, ip, port,
             NacosConstants.DefaultClusterName, cancellationToken);
     }
 
-    public Task RegisterInstanceAsync(string serviceName, string groupName, string ip, int port, 
+    public Task RegisterInstanceAsync(string serviceName, string groupName, string ip, int port,
         CancellationToken cancellationToken = default)
     {
-        return RegisterInstanceAsync(serviceName, groupName, ip, port, 
+        return RegisterInstanceAsync(serviceName, groupName, ip, port,
             NacosConstants.DefaultClusterName, cancellationToken);
     }
 
-    public Task RegisterInstanceAsync(string serviceName, string ip, int port, string clusterName, 
+    public Task RegisterInstanceAsync(string serviceName, string ip, int port, string clusterName,
         CancellationToken cancellationToken = default)
     {
         return RegisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, ip, port, clusterName, cancellationToken);
     }
 
-    public Task RegisterInstanceAsync(string serviceName, string groupName, string ip, int port, 
+    public Task RegisterInstanceAsync(string serviceName, string groupName, string ip, int port,
         string clusterName, CancellationToken cancellationToken = default)
     {
         var instance = new Instance
@@ -125,13 +125,13 @@ public class NacosNamingService : INamingService
         return RegisterInstanceAsync(serviceName, groupName, instance, cancellationToken);
     }
 
-    public Task RegisterInstanceAsync(string serviceName, Instance instance, 
+    public Task RegisterInstanceAsync(string serviceName, Instance instance,
         CancellationToken cancellationToken = default)
     {
         return RegisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, instance, cancellationToken);
     }
 
-    public async Task RegisterInstanceAsync(string serviceName, string groupName, Instance instance, 
+    public async Task RegisterInstanceAsync(string serviceName, string groupName, Instance instance,
         CancellationToken cancellationToken = default)
     {
         instance.Validate();
@@ -139,7 +139,7 @@ public class NacosNamingService : INamingService
 
         var parameters = BuildRegisterParameters(serviceName, groupName, instance);
 
-        await _httpClient.PostAsync(InstanceApiPath, parameters, null, 
+        await _httpClient.PostAsync(InstanceApiPath, parameters, null,
             _options.DefaultTimeout, cancellationToken);
 
         // Start heartbeat for ephemeral instances
@@ -148,11 +148,11 @@ public class NacosNamingService : INamingService
             _beatReactor.AddBeatInfo(serviceName, groupName, instance);
         }
 
-        _logger?.LogInformation("Registered instance {Ip}:{Port} to service {Service}@{Group}", 
+        _logger?.LogInformation("Registered instance {Ip}:{Port} to service {Service}@{Group}",
             instance.Ip, instance.Port, serviceName, groupName);
     }
 
-    public async Task BatchRegisterInstanceAsync(string serviceName, string groupName, 
+    public async Task BatchRegisterInstanceAsync(string serviceName, string groupName,
         List<Instance> instances, CancellationToken cancellationToken = default)
     {
         foreach (var instance in instances)
@@ -161,7 +161,7 @@ public class NacosNamingService : INamingService
         }
     }
 
-    public async Task BatchDeregisterInstanceAsync(string serviceName, string groupName, 
+    public async Task BatchDeregisterInstanceAsync(string serviceName, string groupName,
         List<Instance> instances, CancellationToken cancellationToken = default)
     {
         foreach (var instance in instances)
@@ -174,26 +174,26 @@ public class NacosNamingService : INamingService
 
     #region Deregistration
 
-    public Task DeregisterInstanceAsync(string serviceName, string ip, int port, 
+    public Task DeregisterInstanceAsync(string serviceName, string ip, int port,
         CancellationToken cancellationToken = default)
     {
         return DeregisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, ip, port, cancellationToken);
     }
 
-    public Task DeregisterInstanceAsync(string serviceName, string groupName, string ip, int port, 
+    public Task DeregisterInstanceAsync(string serviceName, string groupName, string ip, int port,
         CancellationToken cancellationToken = default)
     {
-        return DeregisterInstanceAsync(serviceName, groupName, ip, port, 
+        return DeregisterInstanceAsync(serviceName, groupName, ip, port,
             NacosConstants.DefaultClusterName, cancellationToken);
     }
 
-    public Task DeregisterInstanceAsync(string serviceName, string ip, int port, string clusterName, 
+    public Task DeregisterInstanceAsync(string serviceName, string ip, int port, string clusterName,
         CancellationToken cancellationToken = default)
     {
         return DeregisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, ip, port, clusterName, cancellationToken);
     }
 
-    public Task DeregisterInstanceAsync(string serviceName, string groupName, string ip, int port, 
+    public Task DeregisterInstanceAsync(string serviceName, string groupName, string ip, int port,
         string clusterName, CancellationToken cancellationToken = default)
     {
         var instance = new Instance
@@ -205,13 +205,13 @@ public class NacosNamingService : INamingService
         return DeregisterInstanceAsync(serviceName, groupName, instance, cancellationToken);
     }
 
-    public Task DeregisterInstanceAsync(string serviceName, Instance instance, 
+    public Task DeregisterInstanceAsync(string serviceName, Instance instance,
         CancellationToken cancellationToken = default)
     {
         return DeregisterInstanceAsync(serviceName, NacosConstants.DefaultGroup, instance, cancellationToken);
     }
 
-    public async Task DeregisterInstanceAsync(string serviceName, string groupName, Instance instance, 
+    public async Task DeregisterInstanceAsync(string serviceName, string groupName, Instance instance,
         CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -230,10 +230,10 @@ public class NacosNamingService : INamingService
             { "namespaceId", GetNamespace() }
         };
 
-        await _httpClient.DeleteAsync(InstanceApiPath, parameters, 
+        await _httpClient.DeleteAsync(InstanceApiPath, parameters,
             _options.DefaultTimeout, cancellationToken);
 
-        _logger?.LogInformation("Deregistered instance {Ip}:{Port} from service {Service}@{Group}", 
+        _logger?.LogInformation("Deregistered instance {Ip}:{Port} from service {Service}@{Group}",
             instance.Ip, instance.Port, serviceName, groupName);
     }
 
@@ -241,49 +241,49 @@ public class NacosNamingService : INamingService
 
     #region Query
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), true, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, groupName, new List<string>(), true, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, bool subscribe, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, bool subscribe,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), subscribe, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, bool subscribe, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, bool subscribe,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, groupName, new List<string>(), subscribe, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, List<string> clusters, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, List<string> clusters,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, NacosConstants.DefaultGroup, clusters, true, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, List<string> clusters, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, List<string> clusters,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, groupName, clusters, true, cancellationToken);
     }
 
-    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, List<string> clusters, bool subscribe, 
+    public Task<List<Instance>> GetAllInstancesAsync(string serviceName, List<string> clusters, bool subscribe,
         CancellationToken cancellationToken = default)
     {
         return GetAllInstancesAsync(serviceName, NacosConstants.DefaultGroup, clusters, subscribe, cancellationToken);
     }
 
-    public async Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName, 
+    public async Task<List<Instance>> GetAllInstancesAsync(string serviceName, string groupName,
         List<string> clusters, bool subscribe, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -324,98 +324,98 @@ public class NacosNamingService : INamingService
         return serviceInfo?.Hosts ?? new List<Instance>();
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, bool healthy, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, bool healthy,
         CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), healthy, true, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, bool healthy, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, bool healthy,
         CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, groupName, new List<string>(), healthy, true, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, bool healthy, bool subscribe, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, bool healthy, bool subscribe,
         CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), healthy, subscribe, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, bool healthy, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, bool healthy,
         bool subscribe, CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, groupName, new List<string>(), healthy, subscribe, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, List<string> clusters, bool healthy, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, List<string> clusters, bool healthy,
         CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, NacosConstants.DefaultGroup, clusters, healthy, true, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName,
         List<string> clusters, bool healthy, CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, groupName, clusters, healthy, true, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, List<string> clusters, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, List<string> clusters,
         bool healthy, bool subscribe, CancellationToken cancellationToken = default)
     {
         return await SelectInstancesAsync(serviceName, NacosConstants.DefaultGroup, clusters, healthy, subscribe, cancellationToken);
     }
 
-    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName, 
+    public async Task<List<Instance>> SelectInstancesAsync(string serviceName, string groupName,
         List<string> clusters, bool healthy, bool subscribe, CancellationToken cancellationToken = default)
     {
         var instances = await GetAllInstancesAsync(serviceName, groupName, clusters, subscribe, cancellationToken);
         return instances.Where(i => i.Healthy == healthy && i.Enabled && i.Weight > 0).ToList();
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName,
         CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), true, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName,
         CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, groupName, new List<string>(), true, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, bool subscribe, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, bool subscribe,
         CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), subscribe, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName,
         bool subscribe, CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, groupName, new List<string>(), subscribe, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, List<string> clusters, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, List<string> clusters,
         CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, NacosConstants.DefaultGroup, clusters, true, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName,
         List<string> clusters, CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, groupName, clusters, true, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, List<string> clusters, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, List<string> clusters,
         bool subscribe, CancellationToken cancellationToken = default)
     {
         return await SelectOneHealthyInstanceAsync(serviceName, NacosConstants.DefaultGroup, clusters, subscribe, cancellationToken);
     }
 
-    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName, 
+    public async Task<Instance?> SelectOneHealthyInstanceAsync(string serviceName, string groupName,
         List<string> clusters, bool subscribe, CancellationToken cancellationToken = default)
     {
         var instances = await SelectInstancesAsync(serviceName, groupName, clusters, true, subscribe, cancellationToken);
@@ -426,32 +426,32 @@ public class NacosNamingService : INamingService
 
     #region Subscription
 
-    public Task SubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener, 
+    public Task SubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return SubscribeAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), listener, cancellationToken);
     }
 
-    public Task SubscribeAsync(string serviceName, string groupName, Action<IInstancesChangeEvent> listener, 
+    public Task SubscribeAsync(string serviceName, string groupName, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return SubscribeAsync(serviceName, groupName, new List<string>(), listener, cancellationToken);
     }
 
-    public Task SubscribeAsync(string serviceName, List<string> clusters, Action<IInstancesChangeEvent> listener, 
+    public Task SubscribeAsync(string serviceName, List<string> clusters, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return SubscribeAsync(serviceName, NacosConstants.DefaultGroup, clusters, listener, cancellationToken);
     }
 
-    public async Task SubscribeAsync(string serviceName, string groupName, List<string> clusters, 
+    public async Task SubscribeAsync(string serviceName, string groupName, List<string> clusters,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
         var clusterString = NacosUtils.GetClusterString(clusters);
 
         _changeNotifier.RegisterListener(serviceName, groupName, clusterString, listener);
-        
+
         // Ensure service is being polled
         var serviceInfo = await QueryServiceAsync(serviceName, groupName, clusterString, cancellationToken);
         if (serviceInfo != null)
@@ -462,13 +462,13 @@ public class NacosNamingService : INamingService
         _logger?.LogDebug("Subscribed to service {Service}@{Group}", serviceName, groupName);
     }
 
-    public Task SubscribeAsync(string serviceName, INamingSelector selector, 
+    public Task SubscribeAsync(string serviceName, INamingSelector selector,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         return SubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
     }
 
-    public async Task SubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+    public async Task SubscribeAsync(string serviceName, string groupName, INamingSelector selector,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -511,48 +511,48 @@ public class NacosNamingService : INamingService
             _serviceInfoHolder.ProcessServiceInfo(serviceInfo);
         }
 
-        _logger?.LogDebug("Subscribed to service {Service}@{Group} with selector {Selector}", 
+        _logger?.LogDebug("Subscribed to service {Service}@{Group} with selector {Selector}",
             serviceName, groupName, selector?.Expression);
     }
 
-    public Task UnsubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener, 
+    public Task UnsubscribeAsync(string serviceName, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return UnsubscribeAsync(serviceName, NacosConstants.DefaultGroup, new List<string>(), listener, cancellationToken);
     }
 
-    public Task UnsubscribeAsync(string serviceName, string groupName, Action<IInstancesChangeEvent> listener, 
+    public Task UnsubscribeAsync(string serviceName, string groupName, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return UnsubscribeAsync(serviceName, groupName, new List<string>(), listener, cancellationToken);
     }
 
-    public Task UnsubscribeAsync(string serviceName, List<string> clusters, Action<IInstancesChangeEvent> listener, 
+    public Task UnsubscribeAsync(string serviceName, List<string> clusters, Action<IInstancesChangeEvent> listener,
         CancellationToken cancellationToken = default)
     {
         return UnsubscribeAsync(serviceName, NacosConstants.DefaultGroup, clusters, listener, cancellationToken);
     }
 
-    public Task UnsubscribeAsync(string serviceName, string groupName, List<string> clusters, 
+    public Task UnsubscribeAsync(string serviceName, string groupName, List<string> clusters,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
         var clusterString = NacosUtils.GetClusterString(clusters);
 
         _changeNotifier.DeregisterListener(serviceName, groupName, clusterString, listener);
-        
+
         _logger?.LogDebug("Unsubscribed from service {Service}@{Group}", serviceName, groupName);
-        
+
         return Task.CompletedTask;
     }
 
-    public Task UnsubscribeAsync(string serviceName, INamingSelector selector, 
+    public Task UnsubscribeAsync(string serviceName, INamingSelector selector,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         return UnsubscribeAsync(serviceName, NacosConstants.DefaultGroup, selector, listener, cancellationToken);
     }
 
-    public Task UnsubscribeAsync(string serviceName, string groupName, INamingSelector selector, 
+    public Task UnsubscribeAsync(string serviceName, string groupName, INamingSelector selector,
         Action<IInstancesChangeEvent> listener, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -566,7 +566,7 @@ public class NacosNamingService : INamingService
         }
 
         _logger?.LogDebug("Unsubscribed from service {Service}@{Group} with selector", serviceName, groupName);
-        
+
         return Task.CompletedTask;
     }
 
@@ -574,13 +574,13 @@ public class NacosNamingService : INamingService
 
     #region Service List
 
-    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, 
+    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize,
         CancellationToken cancellationToken = default)
     {
         return GetServicesOfServerAsync(pageNo, pageSize, NacosConstants.DefaultGroup, cancellationToken);
     }
 
-    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, 
+    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName,
         CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -593,7 +593,7 @@ public class NacosNamingService : INamingService
             { "namespaceId", GetNamespace() }
         };
 
-        var response = await _httpClient.GetAsync(ServiceApiPath, parameters, 
+        var response = await _httpClient.GetAsync(ServiceApiPath, parameters,
             _options.DefaultTimeout, cancellationToken);
 
         if (string.IsNullOrEmpty(response))
@@ -605,13 +605,13 @@ public class NacosNamingService : INamingService
         return new ListView<string>(result?.Count ?? 0, result?.Doms ?? new List<string>());
     }
 
-    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, INamingSelector selector, 
+    public Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, INamingSelector selector,
         CancellationToken cancellationToken = default)
     {
         return GetServicesOfServerAsync(pageNo, pageSize, NacosConstants.DefaultGroup, selector, cancellationToken);
     }
 
-    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName, 
+    public async Task<ListView<string>> GetServicesOfServerAsync(int pageNo, int pageSize, string groupName,
         INamingSelector selector, CancellationToken cancellationToken = default)
     {
         groupName = GetGroupOrDefault(groupName);
@@ -634,7 +634,7 @@ public class NacosNamingService : INamingService
             });
         }
 
-        var response = await _httpClient.GetAsync(ServiceApiPath, parameters, 
+        var response = await _httpClient.GetAsync(ServiceApiPath, parameters,
             _options.DefaultTimeout, cancellationToken);
 
         if (string.IsNullOrEmpty(response))
@@ -649,7 +649,7 @@ public class NacosNamingService : INamingService
     public Task<List<ServiceInfo>> GetSubscribeServicesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_changeNotifier.GetSubscribedServices()
-            .Select(key => 
+            .Select(key =>
             {
                 var (serviceName, groupName, clusters) = ParseServiceKey(key);
                 return _serviceInfoHolder.GetServiceInfo(serviceName, groupName, clusters);
@@ -677,48 +677,48 @@ public class NacosNamingService : INamingService
 
     #region Fuzzy Watch (Nacos 3.0)
 
-    public Task FuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
+    public Task FuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher,
         CancellationToken cancellationToken = default)
     {
         return FuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public Task FuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
+    public Task FuzzyWatchAsync(string serviceNamePattern, string groupNamePattern,
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         _fuzzyWatchManager.AddWatcher(serviceNamePattern, groupNamePattern, GetNamespace() ?? "", watcher);
-        _logger?.LogDebug("Added fuzzy watch for service={ServicePattern}, group={GroupPattern}", 
+        _logger?.LogDebug("Added fuzzy watch for service={ServicePattern}, group={GroupPattern}",
             serviceNamePattern, groupNamePattern);
         return Task.CompletedTask;
     }
 
-    public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern, 
+    public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern,
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         return FuzzyWatchWithGroupKeysAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public async Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern, 
+    public async Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string serviceNamePattern,
         string groupNamePattern, INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         await FuzzyWatchAsync(serviceNamePattern, groupNamePattern, watcher, cancellationToken);
-        
+
         // Return current matching keys
         var matchingKeys = _fuzzyWatchManager.GetMatchingKeys(serviceNamePattern, groupNamePattern, GetNamespace() ?? "");
         return matchingKeys;
     }
 
-    public Task CancelFuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher, 
+    public Task CancelFuzzyWatchAsync(string serviceNamePattern, INamingFuzzyWatchEventWatcher watcher,
         CancellationToken cancellationToken = default)
     {
         return CancelFuzzyWatchAsync(serviceNamePattern, "*", watcher, cancellationToken);
     }
 
-    public Task CancelFuzzyWatchAsync(string serviceNamePattern, string groupNamePattern, 
+    public Task CancelFuzzyWatchAsync(string serviceNamePattern, string groupNamePattern,
         INamingFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         _fuzzyWatchManager.RemoveWatcher(serviceNamePattern, groupNamePattern, GetNamespace() ?? "", watcher);
-        _logger?.LogDebug("Cancelled fuzzy watch for service={ServicePattern}, group={GroupPattern}", 
+        _logger?.LogDebug("Cancelled fuzzy watch for service={ServicePattern}, group={GroupPattern}",
             serviceNamePattern, groupNamePattern);
         return Task.CompletedTask;
     }
@@ -727,7 +727,7 @@ public class NacosNamingService : INamingService
 
     #region Internal Methods
 
-    internal async Task<bool> SendBeatAsync(string serviceName, string groupName, Instance instance, 
+    internal async Task<bool> SendBeatAsync(string serviceName, string groupName, Instance instance,
         CancellationToken cancellationToken)
     {
         try
@@ -751,7 +751,7 @@ public class NacosNamingService : INamingService
             };
 
             var body = NacosUtils.BuildQueryString(parameters);
-            var response = await _httpClient.PutAsync(BeatApiPath, null, body, 
+            var response = await _httpClient.PutAsync(BeatApiPath, null, body,
                 _options.DefaultTimeout, cancellationToken);
 
             _isHealthy = true;
@@ -764,7 +764,7 @@ public class NacosNamingService : INamingService
         }
     }
 
-    private async Task<ServiceInfo?> QueryServiceAsync(string serviceName, string groupName, 
+    private async Task<ServiceInfo?> QueryServiceAsync(string serviceName, string groupName,
         string clusters, CancellationToken cancellationToken)
     {
         try
@@ -778,7 +778,7 @@ public class NacosNamingService : INamingService
                 { "namespaceId", GetNamespace() }
             };
 
-            var response = await _httpClient.GetAsync(InstanceListApiPath, parameters, 
+            var response = await _httpClient.GetAsync(InstanceListApiPath, parameters,
                 _options.DefaultTimeout, cancellationToken);
 
             if (string.IsNullOrEmpty(response))
@@ -798,13 +798,13 @@ public class NacosNamingService : INamingService
             _isHealthy = false;
             _metricsMonitor.SetConnectionStatus(false);
             _metricsMonitor.RecordNamingRequestFailed();
-            
+
             // Update failover status
             if (_failoverReactor != null)
             {
                 _metricsMonitor.SetFailoverEnabled(_failoverReactor.IsFailoverSwitch());
             }
-            
+
             return null;
         }
     }
@@ -856,7 +856,7 @@ public class NacosNamingService : INamingService
         _logger?.LogInformation("Service info update task stopped");
     }
 
-    private void NotifyListeners(string serviceName, string groupName, string clusters, 
+    private void NotifyListeners(string serviceName, string groupName, string clusters,
         ServiceInfo? oldInfo, ServiceInfo newInfo)
     {
         var changeEvent = new InstancesChangeEvent
@@ -889,8 +889,10 @@ public class NacosNamingService : INamingService
 
     private static Instance? SelectByRandomWeight(List<Instance> instances)
     {
-        if (instances.Count == 0) return null;
-        if (instances.Count == 1) return instances[0];
+        if (instances.Count == 0)
+            return null;
+        if (instances.Count == 1)
+            return instances[0];
 
         var totalWeight = instances.Sum(i => i.Weight);
         if (totalWeight <= 0)
@@ -955,7 +957,7 @@ public class NacosNamingService : INamingService
     private static (string ServiceName, string GroupName, string Clusters) ParseServiceKey(string key)
     {
         var parts = key.Split("@@");
-        return (parts.Length > 1 ? parts[1] : parts[0], 
+        return (parts.Length > 1 ? parts[1] : parts[0],
                 parts.Length > 0 ? parts[0] : NacosConstants.DefaultGroup,
                 parts.Length > 2 ? parts[2] : string.Empty);
     }
@@ -964,7 +966,8 @@ public class NacosNamingService : INamingService
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         await _cts.CancelAsync();
         _cts.Dispose();

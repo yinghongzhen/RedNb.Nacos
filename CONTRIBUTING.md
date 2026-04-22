@@ -75,6 +75,22 @@ docker run -d --name nacos \
 dotnet build
 ```
 
+### 初始化本地工具与 Git Hooks
+
+本仓库使用 `Husky.Net` 执行提交前检查与提交信息校验（Conventional Commits）。
+
+```bash
+dotnet tool restore
+dotnet husky install
+```
+
+可手动验证 Hooks：
+
+```bash
+dotnet husky run --group pre-commit
+dotnet husky run --group commit-msg --args .git/COMMIT_EDITMSG
+```
+
 ### 运行测试
 
 ```bash
@@ -96,6 +112,13 @@ dotnet run
 - 使用 4 个空格缩进
 - 每行代码不超过 120 个字符
 - 所有公共 API 必须有 XML 文档注释
+
+### NuGet 依赖管理
+
+- 本仓库启用 CPM（Central Package Management）
+- 统一版本定义在 `Directory.Packages.props`
+- `*.csproj` 中只保留无版本号的 `PackageReference`
+- 新增依赖优先使用 `dotnet add package <PackageName>`，避免手工编辑 XML
 
 ### 命名约定
 

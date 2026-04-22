@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.Json;
 using Moq;
 using Moq.Protected;
 using RedNb.Nacos.Client.Ai;
@@ -6,8 +8,6 @@ using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Ai.Listener;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
-using System.Net;
-using System.Text.Json;
 using Xunit;
 
 namespace RedNb.Nacos.Http.Tests.Ai;
@@ -104,7 +104,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.GetMcpServerAsync(string.Empty));
         Assert.Contains("mcpName is required", ex.Message);
     }
@@ -116,7 +116,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseMcpServerAsync(null!, null));
         Assert.Contains("serverSpecification is required", ex.Message);
     }
@@ -129,7 +129,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var serverSpec = new McpServerBasicInfo { Name = "" };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseMcpServerAsync(serverSpec, null));
         Assert.Contains("serverSpecification.Name is required", ex.Message);
     }
@@ -142,7 +142,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var serverSpec = new McpServerBasicInfo { Name = "test-mcp" };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseMcpServerAsync(serverSpec, null));
         Assert.Contains("serverSpecification.VersionDetail.Version is required", ex.Message);
     }
@@ -154,7 +154,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterMcpServerEndpointAsync("", "127.0.0.1", 8080));
         Assert.Contains("mcpName is required", ex.Message);
     }
@@ -166,7 +166,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterMcpServerEndpointAsync("test-mcp", "127.0.0.1", 0));
         Assert.Contains("port must be between", ex.Message);
     }
@@ -178,7 +178,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.DeregisterMcpServerEndpointAsync("test-mcp", "", 8080));
         Assert.Contains("address is required", ex.Message);
     }
@@ -190,7 +190,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.SubscribeMcpServerAsync("test-mcp", null!));
         Assert.Contains("listener is required", ex.Message);
     }
@@ -206,7 +206,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.GetAgentCardAsync(string.Empty));
         Assert.Contains("agentName is required", ex.Message);
     }
@@ -218,7 +218,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseAgentCardAsync(null!));
         Assert.Contains("agentCard is required", ex.Message);
     }
@@ -231,7 +231,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var agentCard = new AgentCard { Name = "" };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseAgentCardAsync(agentCard));
         Assert.Contains("agentCard.Name is required", ex.Message);
     }
@@ -244,7 +244,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var agentCard = new AgentCard { Name = "test-agent", Version = "" };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseAgentCardAsync(agentCard));
         Assert.Contains("agentCard.Version is required", ex.Message);
     }
@@ -254,15 +254,15 @@ public class NacosAiServiceTests : IAsyncDisposable
     {
         // Arrange
         _aiService = new NacosAiService(_options);
-        var agentCard = new AgentCard 
-        { 
-            Name = "test-agent", 
-            Version = "1.0.0", 
-            ProtocolVersion = "" 
+        var agentCard = new AgentCard
+        {
+            Name = "test-agent",
+            Version = "1.0.0",
+            ProtocolVersion = ""
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.ReleaseAgentCardAsync(agentCard));
         Assert.Contains("agentCard.ProtocolVersion is required", ex.Message);
     }
@@ -279,7 +279,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var endpoint = new AgentEndpoint { Version = "1.0.0", Address = "127.0.0.1", Port = 8080 };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterAgentEndpointAsync("", endpoint));
         Assert.Contains("agentName is required", ex.Message);
     }
@@ -291,7 +291,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterAgentEndpointAsync("test-agent", (AgentEndpoint)null!));
         Assert.Contains("endpoint is required", ex.Message);
     }
@@ -304,7 +304,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var endpoint = new AgentEndpoint { Version = "", Address = "127.0.0.1", Port = 8080 };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterAgentEndpointAsync("test-agent", endpoint));
         Assert.Contains("endpoint.Version is required", ex.Message);
     }
@@ -316,7 +316,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterAgentEndpointsAsync("test-agent", new List<AgentEndpoint>()));
         Assert.Contains("endpoints cannot be empty", ex.Message);
     }
@@ -333,7 +333,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.RegisterAgentEndpointsAsync("test-agent", endpoints));
         Assert.Contains("must have the same version", ex.Message);
     }
@@ -345,7 +345,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.DeregisterAgentEndpointAsync("test-agent", "1.0.0", "127.0.0.1", 99999));
         Assert.Contains("port must be between", ex.Message);
     }
@@ -362,7 +362,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         var listener = new TestAgentCardListener();
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.SubscribeAgentCardAsync("", listener));
         Assert.Contains("agentName is required", ex.Message);
     }
@@ -374,7 +374,7 @@ public class NacosAiServiceTests : IAsyncDisposable
         _aiService = new NacosAiService(_options);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<NacosException>(() => 
+        var ex = await Assert.ThrowsAsync<NacosException>(() =>
             _aiService.SubscribeAgentCardAsync("test-agent", null!));
         Assert.Contains("listener is required", ex.Message);
     }

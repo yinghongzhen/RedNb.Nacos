@@ -94,7 +94,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(ServiceApiPath, queryParams);
             var response = await _httpClient.PostAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -141,7 +141,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(ServiceApiPath, queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -171,7 +171,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(ServiceApiPath, queryParams);
             var response = await _httpClient.DeleteAsync(url, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -201,7 +201,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(ServiceApiPath, queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<ServiceDetailInfo>(cancellationToken: cancellationToken);
@@ -260,7 +260,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{CatalogApiPath}/services", queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<Page<ServiceView>>(cancellationToken: cancellationToken)
@@ -297,7 +297,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{CatalogApiPath}/services", queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<Page<ServiceDetailInfo>>(cancellationToken: cancellationToken)
@@ -343,7 +343,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{ServiceApiPath}/subscribers", queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<Page<SubscriberInfo>>(cancellationToken: cancellationToken)
@@ -368,7 +368,7 @@ public partial class NacosMaintainerService : IMaintainerService
         {
             var url = $"{ServiceApiPath}/selector/types";
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<List<string>>(cancellationToken: cancellationToken)
@@ -430,7 +430,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(InstanceApiPath, queryParams);
             var response = await _httpClient.PostAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -473,7 +473,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(InstanceApiPath, queryParams);
             var response = await _httpClient.DeleteAsync(url, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -522,7 +522,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(InstanceApiPath, queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -559,7 +559,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{InstanceApiPath}/metadata", queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -581,7 +581,7 @@ public partial class NacosMaintainerService : IMaintainerService
         try
         {
             var instanceKeys = instances.Select(i => $"{i.Ip}:{i.Port}:{i.ClusterName ?? "DEFAULT"}").ToList();
-            
+
             var queryParams = new Dictionary<string, string>
             {
                 ["serviceName"] = serviceName,
@@ -593,7 +593,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{InstanceApiPath}/metadata/batch", queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<InstanceMetadataBatchResult>(cancellationToken: cancellationToken)
@@ -622,7 +622,7 @@ public partial class NacosMaintainerService : IMaintainerService
         try
         {
             var instanceKeys = instances.Select(i => $"{i.Ip}:{i.Port}:{i.ClusterName ?? "DEFAULT"}").ToList();
-            
+
             var queryParams = new Dictionary<string, string>
             {
                 ["serviceName"] = serviceName,
@@ -634,7 +634,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{InstanceApiPath}/metadata/batch", queryParams);
             var response = await _httpClient.DeleteAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<InstanceMetadataBatchResult>(cancellationToken: cancellationToken)
@@ -686,7 +686,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{InstanceApiPath}/list", queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<InstanceListResult>(cancellationToken: cancellationToken);
@@ -736,7 +736,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl(InstanceApiPath, queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<Instance>(cancellationToken: cancellationToken);
@@ -774,7 +774,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{OperatorApiPath}/metrics", queryParams);
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<MetricsInfo>(cancellationToken: cancellationToken)
@@ -805,7 +805,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{OperatorApiPath}/log", queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -839,7 +839,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{HealthApiPath}/instance", queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -857,7 +857,7 @@ public partial class NacosMaintainerService : IMaintainerService
         {
             var url = $"{HealthApiPath}/checkers";
             var response = await _httpClient.GetAsync(url, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<Dictionary<string, HealthCheckerInfo>>(cancellationToken: cancellationToken)
@@ -906,7 +906,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
             var url = BuildUrl($"{CatalogApiPath}/cluster", queryParams);
             var response = await _httpClient.PutAsync(url, null, cancellationToken);
-            
+
             return await HandleResponse(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not NacosException)
@@ -924,7 +924,8 @@ public partial class NacosMaintainerService : IMaintainerService
 
     public async Task ShutdownAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         _serverStatus = "DOWN";
         _disposed = true;
@@ -966,7 +967,7 @@ public partial class NacosMaintainerService : IMaintainerService
 
     private static string BuildUrl(string path, Dictionary<string, string> queryParams)
     {
-        var query = string.Join("&", queryParams.Select(kvp => 
+        var query = string.Join("&", queryParams.Select(kvp =>
             $"{HttpUtility.UrlEncode(kvp.Key)}={HttpUtility.UrlEncode(kvp.Value)}"));
         return $"{path}?{query}";
     }
@@ -974,7 +975,7 @@ public partial class NacosMaintainerService : IMaintainerService
     private static async Task<string> HandleResponse(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        
+
         if (response.IsSuccessStatusCode)
         {
             return content;

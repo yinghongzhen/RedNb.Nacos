@@ -330,9 +330,12 @@ public class MetricsMonitorTests
         _monitor.Reset();
 
         // Act
-        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency)) { Thread.Sleep(5); }
-        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency)) { Thread.Sleep(5); }
-        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency)) { Thread.Sleep(5); }
+        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency))
+        { Thread.Sleep(5); }
+        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency))
+        { Thread.Sleep(5); }
+        using (_monitor.StartTimer(MetricNames.ConfigRequestLatency))
+        { Thread.Sleep(5); }
 
         // Assert - All three timer observations should be recorded
         // No exception should be thrown

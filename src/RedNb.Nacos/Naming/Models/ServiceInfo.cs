@@ -127,7 +127,8 @@ public class ServiceInfo
     /// </summary>
     public bool Validate()
     {
-        if (AllIps) return true;
+        if (AllIps)
+            return true;
         return Hosts.Any(h => h.Healthy && h.Weight > 0);
     }
 

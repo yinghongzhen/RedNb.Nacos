@@ -1,5 +1,5 @@
-using Xunit;
 using RedNb.Nacos.Core.Config.Filter;
+using Xunit;
 
 namespace RedNb.Nacos.Tests.Config.Filter;
 
@@ -101,7 +101,7 @@ public class AesEncryptionConfigFilterTests
         filter.Init(null);
         var plainText = "Hello, Nacos!";
         var encrypted = AesEncryptionConfigFilter.EncryptedPrefix + filter.Encrypt(plainText);
-        
+
         var request = new ConfigRequest("dataId", "group", null, null);
         var response = new ConfigResponse();
         response.PutParameter(ConfigResponseKeys.Content, encrypted);
@@ -122,7 +122,7 @@ public class AesEncryptionConfigFilterTests
         var filter = new AesEncryptionConfigFilter();
         filter.Init(null);
         var plainText = "Hello, Nacos!";
-        
+
         var request = new ConfigRequest("dataId", "group", null, null);
         request.PutParameter(ConfigRequestKeys.Content, plainText);
         var response = new ConfigResponse();

@@ -205,7 +205,7 @@ try
     // ===== Interactive Mode =====
     Console.WriteLine("--- Interactive Mode ---");
     Console.WriteLine("Press Enter to update config, 'q' to quit...");
-    
+
     var updateCount = 0;
     while (true)
     {
@@ -235,7 +235,7 @@ try
     // Cleanup
     Console.WriteLine();
     Console.WriteLine("--- Cleanup ---");
-    
+
     Console.WriteLine("Deregistering instances...");
     await namingService.DeregisterInstanceAsync(serviceName, instance);
     await namingService.DeregisterInstanceAsync(serviceName, instance2);

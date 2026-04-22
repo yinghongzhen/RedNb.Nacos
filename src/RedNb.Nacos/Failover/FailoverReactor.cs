@@ -128,7 +128,7 @@ public class FailoverReactor<T> : IDisposable where T : class
     {
         FailoverData<T>? oldData = null;
         _failoverDataCache.TryGetValue(key, out oldData);
-        
+
         _failoverDataCache.AddOrUpdate(key, data, (_, _) => data);
         _logger.LogDebug("Set failover data for key: {Key}", key);
 

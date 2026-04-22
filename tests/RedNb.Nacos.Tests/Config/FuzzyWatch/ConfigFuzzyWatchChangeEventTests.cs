@@ -1,5 +1,5 @@
-using Xunit;
 using RedNb.Nacos.Core.Config.FuzzyWatch;
+using Xunit;
 
 namespace RedNb.Nacos.Tests.Config.FuzzyWatch;
 

@@ -1,0 +1,2 @@
+#!/bin/sh
+dotnet husky run --group commit-msg --args "$1"

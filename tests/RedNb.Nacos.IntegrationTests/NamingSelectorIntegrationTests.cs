@@ -146,7 +146,7 @@ public class NamingSelectorIntegrationTests : IAsyncLifetime
             // Get instances from specific cluster
             var clusterAInstances = await _namingService.GetAllInstancesAsync(
                 serviceName, new List<string> { "cluster-a" });
-            
+
             var clusterBInstances = await _namingService.GetAllInstancesAsync(
                 serviceName, new List<string> { "cluster-b" });
 

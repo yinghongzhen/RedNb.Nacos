@@ -45,7 +45,7 @@ public class NacosHttpClient : IDisposable
     /// <summary>
     /// Sends a GET request.
     /// </summary>
-    public async Task<string?> GetAsync(string path, Dictionary<string, string?>? parameters = null, 
+    public async Task<string?> GetAsync(string path, Dictionary<string, string?>? parameters = null,
         long timeout = 0, CancellationToken cancellationToken = default)
     {
         return await RequestAsync(HttpMethod.Get, path, parameters, null, null, timeout, cancellationToken);
@@ -64,7 +64,7 @@ public class NacosHttpClient : IDisposable
     /// Sends a POST request with custom headers.
     /// </summary>
     public async Task<string?> PostWithHeadersAsync(string path, Dictionary<string, string?>? parameters = null,
-        string? body = null, Dictionary<string, string>? headers = null, long timeout = 0, 
+        string? body = null, Dictionary<string, string>? headers = null, long timeout = 0,
         CancellationToken cancellationToken = default)
     {
         return await RequestAsync(HttpMethod.Post, path, parameters, body, headers, timeout, cancellationToken);
@@ -91,8 +91,8 @@ public class NacosHttpClient : IDisposable
     /// <summary>
     /// Sends an HTTP request with automatic retry and server failover.
     /// </summary>
-    private async Task<string?> RequestAsync(HttpMethod method, string path, 
-        Dictionary<string, string?>? parameters, string? body, Dictionary<string, string>? headers, long timeout, 
+    private async Task<string?> RequestAsync(HttpMethod method, string path,
+        Dictionary<string, string?>? parameters, string? body, Dictionary<string, string>? headers, long timeout,
         CancellationToken cancellationToken)
     {
         var servers = _serverListManager.GetServerList();
@@ -111,18 +111,18 @@ public class NacosHttpClient : IDisposable
         {
             var server = _serverListManager.GetNextServer();
             var baseUrl = _options.GetBaseUrl(server);
-            
+
             // Create a timeout CancellationTokenSource for this request
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-            
+
             try
             {
                 var url = BuildUrl(baseUrl, path, parameters);
                 _logger?.LogDebug("Sending {Method} request to {Url} with timeout {Timeout}ms", method, url, effectiveTimeout);
 
                 using var request = new HttpRequestMessage(method, url);
-                
+
                 // Add authentication headers
                 await AddAuthHeadersAsync(request, cancellationToken);
 
@@ -197,7 +197,7 @@ public class NacosHttpClient : IDisposable
     private static string BuildUrl(string baseUrl, string path, Dictionary<string, string?>? parameters)
     {
         var url = $"{baseUrl.TrimEnd('/')}/{path.TrimStart('/')}";
-        
+
         if (parameters != null && parameters.Count > 0)
         {
             var queryString = NacosUtils.BuildQueryString(parameters);
@@ -218,7 +218,8 @@ public class NacosHttpClient : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _httpClient.Dispose();
         _securityProxy.Dispose();
         _disposed = true;

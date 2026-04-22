@@ -287,9 +287,12 @@ public class NacosAiService : IAiService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        if (pageNo < 1) pageNo = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        if (pageNo < 1)
+            pageNo = 1;
+        if (pageSize < 1)
+            pageSize = 10;
+        if (pageSize > 100)
+            pageSize = 100;
 
         var parameters = new Dictionary<string, string?>
         {
@@ -688,7 +691,7 @@ public class NacosAiService : IAiService
     {
         ValidateAgentName(agentName);
         var endpointList = endpoints?.ToList() ?? throw new NacosException(NacosException.InvalidParam, "endpoints is required");
-        
+
         if (endpointList.Count == 0)
         {
             throw new NacosException(NacosException.InvalidParam, "endpoints cannot be empty");
@@ -853,9 +856,12 @@ public class NacosAiService : IAiService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        if (pageNo < 1) pageNo = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        if (pageNo < 1)
+            pageNo = 1;
+        if (pageSize < 1)
+            pageSize = 10;
+        if (pageSize > 100)
+            pageSize = 100;
 
         var parameters = new Dictionary<string, string?>
         {
@@ -933,7 +939,8 @@ public class NacosAiService : IAiService
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         await _cts.CancelAsync();
         _cts.Dispose();
@@ -960,7 +967,8 @@ public class NacosAiService : IAiService
                 var subscriptions = _listenerManager.GetAllSubscriptions();
                 foreach (var (name, version, isMcp) in subscriptions)
                 {
-                    if (cancellationToken.IsCancellationRequested) break;
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
 
                     try
                     {

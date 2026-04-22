@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using RedNb.Nacos.Core;
-using RedNb.Nacos.Core.Config;
-using RedNb.Nacos.Core.Naming;
 using RedNb.Nacos.Client;
 using RedNb.Nacos.Client.Config;
 using RedNb.Nacos.Client.Naming;
+using RedNb.Nacos.Core;
+using RedNb.Nacos.Core.Config;
+using RedNb.Nacos.Core.Naming;
 
 namespace RedNb.Nacos.DependencyInjection;
 
@@ -23,13 +23,13 @@ public static class NacosServiceCollectionExtensions
     /// <param name="configureOptions">Action to configure Nacos client options.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNacos(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         Action<NacosClientOptions> configureOptions)
     {
         services.Configure(configureOptions);
-        
+
         services.TryAddSingleton<INacosFactory, NacosFactory>();
-        
+
         services.TryAddSingleton<IConfigService>(sp =>
         {
             var options = new NacosClientOptions();
@@ -58,7 +58,7 @@ public static class NacosServiceCollectionExtensions
     /// <param name="configureOptions">Action to configure Nacos client options.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNacosConfig(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         Action<NacosClientOptions> configureOptions)
     {
         services.Configure(configureOptions);
@@ -82,7 +82,7 @@ public static class NacosServiceCollectionExtensions
     /// <param name="configureOptions">Action to configure Nacos client options.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNacosNaming(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         Action<NacosClientOptions> configureOptions)
     {
         services.Configure(configureOptions);
@@ -109,10 +109,10 @@ public static class NacosServiceCollectionExtensions
     /// <param name="namespace">Optional namespace (tenant) identifier.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNacos(
-        this IServiceCollection services, 
-        string serverAddresses, 
-        string? username = null, 
-        string? password = null, 
+        this IServiceCollection services,
+        string serverAddresses,
+        string? username = null,
+        string? password = null,
         string? @namespace = null)
     {
         return services.AddNacos(options =>

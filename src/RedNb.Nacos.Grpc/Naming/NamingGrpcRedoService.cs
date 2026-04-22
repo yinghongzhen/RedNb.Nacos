@@ -265,7 +265,8 @@ internal class NamingGrpcRedoService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         _registeredInstances.Clear();
