@@ -133,17 +133,17 @@ public class ServiceInfoHolderTests
     {
         // Arrange
         var holder = new ServiceInfoHolder();
-        var serviceInfo1 = new ServiceInfo 
-        { 
-            Name = "testService", 
-            GroupName = "DEFAULT_GROUP", 
-            Clusters = "cluster-a" 
+        var serviceInfo1 = new ServiceInfo
+        {
+            Name = "testService",
+            GroupName = "DEFAULT_GROUP",
+            Clusters = "cluster-a"
         };
-        var serviceInfo2 = new ServiceInfo 
-        { 
-            Name = "testService", 
-            GroupName = "DEFAULT_GROUP", 
-            Clusters = "cluster-b" 
+        var serviceInfo2 = new ServiceInfo
+        {
+            Name = "testService",
+            GroupName = "DEFAULT_GROUP",
+            Clusters = "cluster-b"
         };
 
         holder.UpdateServiceInfo(serviceInfo1);

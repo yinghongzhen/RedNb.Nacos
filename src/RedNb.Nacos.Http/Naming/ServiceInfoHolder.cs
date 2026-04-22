@@ -45,9 +45,9 @@ public class ServiceInfoHolder
     public ServiceInfo? GetServiceInfo(string serviceName, string groupName, string clusters)
     {
         var key = ServiceInfo.GetKey(
-            $"{groupName}{NacosConstants.ServiceInfoSplitter}{serviceName}", 
+            $"{groupName}{NacosConstants.ServiceInfoSplitter}{serviceName}",
             clusters);
-        
+
         _serviceInfoMap.TryGetValue(key, out var serviceInfo);
         return serviceInfo;
     }

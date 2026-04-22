@@ -398,7 +398,8 @@ internal class NamingRpcTransportClient : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         _grpcClient.UnregisterPushHandler("naming");

@@ -163,7 +163,8 @@ public class Instance
 
     public override bool Equals(object? obj)
     {
-        if (obj is not Instance other) return false;
+        if (obj is not Instance other)
+            return false;
         return ToString() == other.ToString();
     }
 

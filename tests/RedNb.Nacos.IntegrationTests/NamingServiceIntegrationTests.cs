@@ -194,7 +194,7 @@ public class NamingServiceIntegrationTests : IAsyncLifetime
             {
                 _output.WriteLine($"  {kvp.Key}: {kvp.Value}");
             }
-            
+
             selections.Should().NotBeEmpty();
         }
         finally

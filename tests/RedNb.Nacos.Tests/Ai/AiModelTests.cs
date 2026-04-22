@@ -1,7 +1,7 @@
+using System.Text.Json;
 using RedNb.Nacos.Core.Ai;
 using RedNb.Nacos.Core.Ai.Model.A2a;
 using RedNb.Nacos.Core.Ai.Model.Mcp;
-using System.Text.Json;
 using Xunit;
 
 namespace RedNb.Nacos.Tests.Ai;

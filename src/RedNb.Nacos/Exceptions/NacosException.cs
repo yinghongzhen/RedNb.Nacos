@@ -30,14 +30,14 @@ public class NacosException : Exception
         ErrorMessage = message;
     }
 
-    public NacosException(int errorCode, string message, Exception innerException) 
+    public NacosException(int errorCode, string message, Exception innerException)
         : base(message, innerException)
     {
         ErrorCode = errorCode;
         ErrorMessage = message;
     }
 
-    public NacosException(int errorCode, Exception innerException) 
+    public NacosException(int errorCode, Exception innerException)
         : base(innerException.Message, innerException)
     {
         ErrorCode = errorCode;
@@ -49,7 +49,7 @@ public class NacosException : Exception
     }
 
     #region Client Error Codes
-    
+
     /// <summary>
     /// Invalid param.
     /// </summary>

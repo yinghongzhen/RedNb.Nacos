@@ -11,12 +11,12 @@ public abstract class AbstractConfigChangeParser : IConfigChangeParser
     /// <inheritdoc />
     public Dictionary<string, ConfigChangeItem> Parse(string? oldContent, string? newContent, string configType)
     {
-        var oldMap = string.IsNullOrEmpty(oldContent) 
-            ? new Dictionary<string, string>() 
+        var oldMap = string.IsNullOrEmpty(oldContent)
+            ? new Dictionary<string, string>()
             : ParseToMap(oldContent);
-            
-        var newMap = string.IsNullOrEmpty(newContent) 
-            ? new Dictionary<string, string>() 
+
+        var newMap = string.IsNullOrEmpty(newContent)
+            ? new Dictionary<string, string>()
             : ParseToMap(newContent);
 
         return FilterChangeData(oldMap, newMap);

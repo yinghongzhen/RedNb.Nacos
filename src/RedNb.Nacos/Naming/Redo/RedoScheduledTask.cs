@@ -76,7 +76,7 @@ public class RedoScheduledTask
         var redoType = redoData.GetRedoType();
         var serviceName = redoData.ServiceName;
         var groupName = redoData.GroupName;
-        
+
         _logger.LogInformation("Redo instance operation {RedoType} for {GroupName}@@{ServiceName}",
             redoType, groupName, serviceName);
 

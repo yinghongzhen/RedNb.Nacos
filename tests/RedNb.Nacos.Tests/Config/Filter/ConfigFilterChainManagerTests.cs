@@ -1,5 +1,5 @@
-using Xunit;
 using RedNb.Nacos.Core.Config.Filter;
+using Xunit;
 
 namespace RedNb.Nacos.Tests.Config.Filter;
 
@@ -39,9 +39,9 @@ public class ConfigFilterChainManagerTests
         // Assert - Verify through execution order
         var request = new ConfigRequest("dataId", "group", null, null);
         var response = new ConfigResponse();
-        
+
         await manager.DoFilterAsync(request, response);
-        
+
         // All filters should be called
         Assert.True(filter1.WasCalled);
         Assert.True(filter2.WasCalled);
@@ -97,7 +97,7 @@ public class ConfigFilterChainManagerTests
         var filter2 = new TestConfigFilter("filter2", 2);
         manager.AddFilter(filter1);
         manager.AddFilter(filter2);
-        
+
         var request = new ConfigRequest("dataId", "group", null, null);
         var response = new ConfigResponse();
 
@@ -128,7 +128,7 @@ public class ConfigFilterChainManagerTests
     private class TestConfigFilter : IConfigFilter
     {
         public bool WasCalled { get; private set; }
-        
+
         public string FilterName { get; }
         public int Order { get; }
 

@@ -71,17 +71,17 @@ public class BeatReactor : IDisposable
                 foreach (var kvp in _beatInfoMap)
                 {
                     var beatInfo = kvp.Value;
-                    
+
                     if (now - beatInfo.LastBeatTime >= beatInfo.Period)
                     {
                         try
                         {
                             await _namingService.SendBeatAsync(
-                                beatInfo.ServiceName, 
-                                beatInfo.GroupName, 
-                                beatInfo.Instance, 
+                                beatInfo.ServiceName,
+                                beatInfo.GroupName,
+                                beatInfo.Instance,
                                 cancellationToken);
-                            
+
                             beatInfo.LastBeatTime = now;
                             _logger?.LogDebug("Sent heartbeat for {Key}", kvp.Key);
                         }
@@ -112,7 +112,8 @@ public class BeatReactor : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _cts.Cancel();
         _cts.Dispose();
         _disposed = true;

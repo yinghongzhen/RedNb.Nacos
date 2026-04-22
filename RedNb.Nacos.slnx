@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/RedNb.Nacos.Sample.Console/RedNb.Nacos.Sample.Console.csproj" />
+    <Project Path="samples/RedNb.Nacos.Sample.WebApi/RedNb.Nacos.Sample.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/RedNb.Nacos.All/RedNb.Nacos.All.csproj" />
+    <Project Path="src/RedNb.Nacos.AspNetCore/RedNb.Nacos.AspNetCore.csproj" />
+    <Project Path="src/RedNb.Nacos.DependencyInjection/RedNb.Nacos.DependencyInjection.csproj" />
+    <Project Path="src/RedNb.Nacos.Grpc/RedNb.Nacos.Grpc.csproj" />
+    <Project Path="src/RedNb.Nacos.Http/RedNb.Nacos.Http.csproj" />
+    <Project Path="src/RedNb.Nacos/RedNb.Nacos.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RedNb.Nacos.Http.Tests/RedNb.Nacos.Http.Tests.csproj" />
+    <Project Path="tests/RedNb.Nacos.IntegrationTests/RedNb.Nacos.IntegrationTests.csproj" />
+    <Project Path="tests/RedNb.Nacos.Tests/RedNb.Nacos.Tests.csproj" />
+  </Folder>
+</Solution>

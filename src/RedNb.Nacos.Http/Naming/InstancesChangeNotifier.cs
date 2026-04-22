@@ -14,11 +14,11 @@ public class InstancesChangeNotifier
     /// <summary>
     /// Registers a listener for a service.
     /// </summary>
-    public void RegisterListener(string serviceName, string groupName, string clusters, 
+    public void RegisterListener(string serviceName, string groupName, string clusters,
         Action<IInstancesChangeEvent> listener)
     {
         var key = GetKey(serviceName, groupName, clusters);
-        
+
         lock (_lock)
         {
             if (!_listeners.TryGetValue(key, out var listeners))
@@ -37,7 +37,7 @@ public class InstancesChangeNotifier
     /// <summary>
     /// Deregisters a listener for a service.
     /// </summary>
-    public void DeregisterListener(string serviceName, string groupName, string clusters, 
+    public void DeregisterListener(string serviceName, string groupName, string clusters,
         Action<IInstancesChangeEvent> listener)
     {
         var key = GetKey(serviceName, groupName, clusters);
@@ -58,7 +58,7 @@ public class InstancesChangeNotifier
     /// <summary>
     /// Notifies all listeners of an event.
     /// </summary>
-    public void NotifyListeners(string serviceName, string groupName, string clusters, 
+    public void NotifyListeners(string serviceName, string groupName, string clusters,
         IInstancesChangeEvent changeEvent)
     {
         var key = GetKey(serviceName, groupName, clusters);

@@ -23,11 +23,11 @@ internal class FuzzyWatchManager
     /// <summary>
     /// Adds a watcher for the specified pattern.
     /// </summary>
-    public void AddWatcher(string dataIdPattern, string groupPattern, string tenant, 
+    public void AddWatcher(string dataIdPattern, string groupPattern, string tenant,
         IConfigFuzzyWatchEventWatcher watcher)
     {
         var key = GetWatchKey(dataIdPattern, groupPattern, tenant);
-        
+
         _watchers.AddOrUpdate(key,
             _ => new FuzzyWatchEntry
             {
@@ -52,17 +52,17 @@ internal class FuzzyWatchManager
     /// <summary>
     /// Removes a watcher for the specified pattern.
     /// </summary>
-    public void RemoveWatcher(string dataIdPattern, string groupPattern, string tenant, 
+    public void RemoveWatcher(string dataIdPattern, string groupPattern, string tenant,
         IConfigFuzzyWatchEventWatcher watcher)
     {
         var key = GetWatchKey(dataIdPattern, groupPattern, tenant);
-        
+
         if (_watchers.TryGetValue(key, out var entry))
         {
             lock (_lock)
             {
                 entry.Watchers.Remove(watcher);
-                
+
                 if (entry.Watchers.Count == 0)
                 {
                     _watchers.TryRemove(key, out _);
@@ -104,7 +104,7 @@ internal class FuzzyWatchManager
     /// <summary>
     /// Notifies watchers of a configuration change.
     /// </summary>
-    public void NotifyConfigChange(string dataId, string group, string tenant, 
+    public void NotifyConfigChange(string dataId, string group, string tenant,
         string changeType, string syncType)
     {
         var configKey = GetConfigKey(dataId, group, tenant);
@@ -146,7 +146,7 @@ internal class FuzzyWatchManager
                         var scheduler = watcher.Scheduler;
                         if (scheduler != null)
                         {
-                            Task.Factory.StartNew(() => watcher.OnEvent(changeEvent), 
+                            Task.Factory.StartNew(() => watcher.OnEvent(changeEvent),
                                 CancellationToken.None, TaskCreationOptions.None, scheduler);
                         }
                         else
@@ -156,7 +156,7 @@ internal class FuzzyWatchManager
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError(ex, "Error notifying fuzzy watch watcher for {DataId}@{Group}", 
+                        _logger?.LogError(ex, "Error notifying fuzzy watch watcher for {DataId}@{Group}",
                             dataId, group);
                     }
                 }
@@ -200,7 +200,7 @@ internal class FuzzyWatchManager
         var regexPattern = "^" + Regex.Escape(pattern)
             .Replace("\\*", ".*")
             .Replace("\\?", ".") + "$";
-        
+
         return new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
     }
 

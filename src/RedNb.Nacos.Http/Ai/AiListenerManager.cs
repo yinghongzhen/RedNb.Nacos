@@ -94,7 +94,7 @@ public class AiListenerManager
     {
         var listeners = GetMcpListeners(mcpName, version);
         var evt = new NacosMcpServerEvent(serverInfo);
-        
+
         foreach (var listener in listeners)
         {
             try
@@ -185,7 +185,7 @@ public class AiListenerManager
     {
         var listeners = GetAgentListeners(agentName, version);
         var evt = new NacosAgentCardEvent(agentCard);
-        
+
         foreach (var listener in listeners)
         {
             try
@@ -219,7 +219,7 @@ public class AiListenerManager
     public IReadOnlyList<(string Name, string? Version, bool IsMcp)> GetAllSubscriptions()
     {
         var result = new List<(string, string?, bool)>();
-        
+
         lock (_mcpLock)
         {
             foreach (var key in _mcpListeners.Keys)
@@ -230,7 +230,7 @@ public class AiListenerManager
                 result.Add((name, version, true));
             }
         }
-        
+
         lock (_agentLock)
         {
             foreach (var key in _agentCardListeners.Keys)
@@ -241,7 +241,7 @@ public class AiListenerManager
                 result.Add((name, version, false));
             }
         }
-        
+
         return result;
     }
 
@@ -254,7 +254,7 @@ public class AiListenerManager
         {
             _mcpListeners.Clear();
         }
-        
+
         lock (_agentLock)
         {
             _agentCardListeners.Clear();

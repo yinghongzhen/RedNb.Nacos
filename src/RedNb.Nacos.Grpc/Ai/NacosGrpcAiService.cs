@@ -22,12 +22,12 @@ public class NacosGrpcAiService : IAiService
     private readonly NacosGrpcClient _grpcClient;
     private readonly ILogger<NacosGrpcAiService>? _logger;
     private readonly string _namespaceId;
-    
+
     private readonly ConcurrentDictionary<string, McpServerDetailInfo?> _mcpCache = new();
     private readonly ConcurrentDictionary<string, AgentCardDetailInfo?> _agentCache = new();
     private readonly ConcurrentDictionary<string, List<AbstractNacosMcpServerListener>> _mcpListeners = new();
     private readonly ConcurrentDictionary<string, List<AbstractNacosAgentCardListener>> _agentListeners = new();
-    
+
     private bool _disposed;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -180,10 +180,11 @@ public class NacosGrpcAiService : IAiService
     public async Task<McpServerDetailInfo?> SubscribeMcpServerAsync(string mcpName, string? version, AbstractNacosMcpServerListener listener, CancellationToken cancellationToken = default)
     {
         ValidateMcpName(mcpName);
-        if (listener == null) throw new NacosException(NacosException.InvalidParam, "listener is required");
+        if (listener == null)
+            throw new NacosException(NacosException.InvalidParam, "listener is required");
 
         var key = GetMcpKey(mcpName, version);
-        
+
         _mcpListeners.AddOrUpdate(key,
             _ => new List<AbstractNacosMcpServerListener> { listener },
             (_, list) => { list.Add(listener); return list; });
@@ -221,7 +222,8 @@ public class NacosGrpcAiService : IAiService
     public Task UnsubscribeMcpServerAsync(string mcpName, string? version, AbstractNacosMcpServerListener listener, CancellationToken cancellationToken = default)
     {
         ValidateMcpName(mcpName);
-        if (listener == null) return Task.CompletedTask;
+        if (listener == null)
+            return Task.CompletedTask;
 
         var key = GetMcpKey(mcpName, version);
 
@@ -274,9 +276,12 @@ public class NacosGrpcAiService : IAiService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        if (pageNo < 1) pageNo = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        if (pageNo < 1)
+            pageNo = 1;
+        if (pageSize < 1)
+            pageSize = 10;
+        if (pageSize > 100)
+            pageSize = 100;
 
         var request = new McpServerListRequest
         {
@@ -604,7 +609,7 @@ public class NacosGrpcAiService : IAiService
             throw new NacosException(NacosException.ServerError, "Failed to register Agent endpoint");
         }
 
-        _logger?.LogInformation("Registered Agent endpoint {Address}:{Port} to {AgentName}", 
+        _logger?.LogInformation("Registered Agent endpoint {Address}:{Port} to {AgentName}",
             endpoint.Address, endpoint.Port, agentName);
     }
 
@@ -654,7 +659,7 @@ public class NacosGrpcAiService : IAiService
             throw new NacosException(NacosException.ServerError, "Failed to deregister Agent endpoint");
         }
 
-        _logger?.LogInformation("Deregistered Agent endpoint {Address}:{Port} from {AgentName}", 
+        _logger?.LogInformation("Deregistered Agent endpoint {Address}:{Port} from {AgentName}",
             endpoint.Address, endpoint.Port, agentName);
     }
 
@@ -668,10 +673,11 @@ public class NacosGrpcAiService : IAiService
     public async Task<AgentCardDetailInfo?> SubscribeAgentCardAsync(string agentName, string? version, AbstractNacosAgentCardListener listener, CancellationToken cancellationToken = default)
     {
         ValidateAgentName(agentName);
-        if (listener == null) throw new NacosException(NacosException.InvalidParam, "listener is required");
+        if (listener == null)
+            throw new NacosException(NacosException.InvalidParam, "listener is required");
 
         var key = GetAgentKey(agentName, version);
-        
+
         _agentListeners.AddOrUpdate(key,
             _ => new List<AbstractNacosAgentCardListener> { listener },
             (_, list) => { list.Add(listener); return list; });
@@ -709,7 +715,8 @@ public class NacosGrpcAiService : IAiService
     public Task UnsubscribeAgentCardAsync(string agentName, string? version, AbstractNacosAgentCardListener listener, CancellationToken cancellationToken = default)
     {
         ValidateAgentName(agentName);
-        if (listener == null) return Task.CompletedTask;
+        if (listener == null)
+            return Task.CompletedTask;
 
         var key = GetAgentKey(agentName, version);
 
@@ -762,9 +769,12 @@ public class NacosGrpcAiService : IAiService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        if (pageNo < 1) pageNo = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        if (pageNo < 1)
+            pageNo = 1;
+        if (pageSize < 1)
+            pageSize = 10;
+        if (pageSize > 100)
+            pageSize = 100;
 
         var request = new AgentListRequest
         {
@@ -820,13 +830,14 @@ public class NacosGrpcAiService : IAiService
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         _mcpListeners.Clear();
         _agentListeners.Clear();
         _mcpCache.Clear();
         _agentCache.Clear();
-        
+
         await _grpcClient.DisposeAsync();
         _disposed = true;
     }
@@ -857,7 +868,8 @@ public class NacosGrpcAiService : IAiService
     private void HandleMcpServerPush(string body)
     {
         var notification = JsonSerializer.Deserialize<McpServerNotification>(body, JsonOptions);
-        if (notification == null) return;
+        if (notification == null)
+            return;
 
         var key = GetMcpKey(notification.McpName, notification.Version);
 
@@ -887,7 +899,8 @@ public class NacosGrpcAiService : IAiService
     private void HandleAgentCardPush(string body)
     {
         var notification = JsonSerializer.Deserialize<AgentCardNotification>(body, JsonOptions);
-        if (notification == null) return;
+        if (notification == null)
+            return;
 
         var key = GetAgentKey(notification.AgentName, notification.Version);
 

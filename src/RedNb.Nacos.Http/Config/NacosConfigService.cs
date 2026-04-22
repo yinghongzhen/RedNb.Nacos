@@ -50,7 +50,7 @@ public class NacosConfigService : IConfigService
         _ = StartLongPollingAsync(_cts.Token);
     }
 
-    public async Task<string?> GetConfigAsync(string dataId, string group, long timeoutMs, 
+    public async Task<string?> GetConfigAsync(string dataId, string group, long timeoutMs,
         CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
@@ -66,14 +66,14 @@ public class NacosConfigService : IConfigService
             };
 
             var content = await _httpClient.GetAsync(ConfigApiPath, parameters, timeoutMs, cancellationToken);
-            
+
             if (content != null)
             {
                 _localCache.SaveSnapshot(dataId, group, content);
                 _isHealthy = true;
                 _metricsMonitor.SetConnectionStatus(true);
                 _metricsMonitor.RecordConfigRequestSuccess();
-                
+
                 // Apply filter chain for decryption
                 content = await ApplyGetFilterAsync(dataId, group, content, cancellationToken);
             }
@@ -91,7 +91,7 @@ public class NacosConfigService : IConfigService
             _isHealthy = false;
             _metricsMonitor.SetConnectionStatus(false);
             _metricsMonitor.RecordConfigRequestFailed();
-            
+
             // Try to get from local cache
             var cached = _localCache.GetSnapshot(dataId, group);
             if (cached != null)
@@ -106,7 +106,7 @@ public class NacosConfigService : IConfigService
         }
     }
 
-    public async Task<string?> GetConfigAndSignListenerAsync(string dataId, string group, long timeoutMs, 
+    public async Task<string?> GetConfigAndSignListenerAsync(string dataId, string group, long timeoutMs,
         IConfigChangeListener listener, CancellationToken cancellationToken = default)
     {
         var content = await GetConfigAsync(dataId, group, timeoutMs, cancellationToken);
@@ -114,16 +114,16 @@ public class NacosConfigService : IConfigService
         return content;
     }
 
-    public async Task AddListenerAsync(string dataId, string group, IConfigChangeListener listener, 
+    public async Task AddListenerAsync(string dataId, string group, IConfigChangeListener listener,
         CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
         ValidateParams(dataId, group);
-        
+
         _listenerManager.AddListener(dataId, group, GetTenant(), listener);
         _metricsMonitor.SetListenConfigCount(_listenerManager.GetListeningConfigs().Count);
         _logger?.LogDebug("Added listener for {DataId}@{Group}", dataId, group);
-        
+
         // Initialize MD5 for the listener to enable proper change detection
         try
         {
@@ -146,13 +146,13 @@ public class NacosConfigService : IConfigService
         _logger?.LogDebug("Removed listener for {DataId}@{Group}", dataId, group);
     }
 
-    public async Task<bool> PublishConfigAsync(string dataId, string group, string content, 
+    public async Task<bool> PublishConfigAsync(string dataId, string group, string content,
         CancellationToken cancellationToken = default)
     {
         return await PublishConfigAsync(dataId, group, content, ConfigType.Default, cancellationToken);
     }
 
-    public async Task<bool> PublishConfigAsync(string dataId, string group, string content, string type, 
+    public async Task<bool> PublishConfigAsync(string dataId, string group, string content, string type,
         CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
@@ -176,14 +176,14 @@ public class NacosConfigService : IConfigService
         }
 
         var body = NacosUtils.BuildQueryString(parameters);
-        
+
         try
         {
-            var response = await _httpClient.PostAsync(ConfigApiPath, null, body, 
+            var response = await _httpClient.PostAsync(ConfigApiPath, null, body,
                 _options.DefaultTimeout, cancellationToken);
 
             var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-            
+
             if (result)
             {
                 _metricsMonitor.RecordConfigRequestSuccess();
@@ -203,13 +203,13 @@ public class NacosConfigService : IConfigService
         }
     }
 
-    public async Task<bool> PublishConfigCasAsync(string dataId, string group, string content, string casMd5, 
+    public async Task<bool> PublishConfigCasAsync(string dataId, string group, string content, string casMd5,
         CancellationToken cancellationToken = default)
     {
         return await PublishConfigCasAsync(dataId, group, content, casMd5, ConfigType.Default, cancellationToken);
     }
 
-    public async Task<bool> PublishConfigCasAsync(string dataId, string group, string content, string casMd5, 
+    public async Task<bool> PublishConfigCasAsync(string dataId, string group, string content, string casMd5,
         string type, CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
@@ -226,13 +226,13 @@ public class NacosConfigService : IConfigService
         };
 
         var body = NacosUtils.BuildQueryString(parameters);
-        var response = await _httpClient.PostAsync(ConfigApiPath, null, body, 
+        var response = await _httpClient.PostAsync(ConfigApiPath, null, body,
             _options.DefaultTimeout, cancellationToken);
 
         return response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
     }
 
-    public async Task<bool> RemoveConfigAsync(string dataId, string group, 
+    public async Task<bool> RemoveConfigAsync(string dataId, string group,
         CancellationToken cancellationToken = default)
     {
         group = GetGroupOrDefault(group);
@@ -247,11 +247,11 @@ public class NacosConfigService : IConfigService
 
         try
         {
-            var response = await _httpClient.DeleteAsync(ConfigApiPath, parameters, 
+            var response = await _httpClient.DeleteAsync(ConfigApiPath, parameters,
                 _options.DefaultTimeout, cancellationToken);
 
             var result = response?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-            
+
             if (result)
             {
                 _localCache.RemoveSnapshot(dataId, group);
@@ -285,48 +285,48 @@ public class NacosConfigService : IConfigService
 
     #region Fuzzy Watch
 
-    public Task FuzzyWatchAsync(string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher, 
+    public Task FuzzyWatchAsync(string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher,
         CancellationToken cancellationToken = default)
     {
         return FuzzyWatchAsync("*", groupNamePattern, watcher, cancellationToken);
     }
 
-    public Task FuzzyWatchAsync(string dataIdPattern, string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher, 
+    public Task FuzzyWatchAsync(string dataIdPattern, string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher,
         CancellationToken cancellationToken = default)
     {
         _fuzzyWatchManager.AddWatcher(dataIdPattern, groupNamePattern, GetTenant() ?? "", watcher);
-        _logger?.LogDebug("Added fuzzy watch for dataId={DataIdPattern}, group={GroupPattern}", 
+        _logger?.LogDebug("Added fuzzy watch for dataId={DataIdPattern}, group={GroupPattern}",
             dataIdPattern, groupNamePattern);
         return Task.CompletedTask;
     }
 
-    public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string groupNamePattern, 
+    public Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string groupNamePattern,
         IConfigFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         return FuzzyWatchWithGroupKeysAsync("*", groupNamePattern, watcher, cancellationToken);
     }
 
-    public async Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string dataIdPattern, string groupNamePattern, 
+    public async Task<ISet<string>> FuzzyWatchWithGroupKeysAsync(string dataIdPattern, string groupNamePattern,
         IConfigFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         await FuzzyWatchAsync(dataIdPattern, groupNamePattern, watcher, cancellationToken);
-        
+
         // Return current matching keys
         var matchingKeys = _fuzzyWatchManager.GetMatchingKeys(dataIdPattern, groupNamePattern, GetTenant() ?? "");
         return matchingKeys;
     }
 
-    public Task CancelFuzzyWatchAsync(string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher, 
+    public Task CancelFuzzyWatchAsync(string groupNamePattern, IConfigFuzzyWatchEventWatcher watcher,
         CancellationToken cancellationToken = default)
     {
         return CancelFuzzyWatchAsync("*", groupNamePattern, watcher, cancellationToken);
     }
 
-    public Task CancelFuzzyWatchAsync(string dataIdPattern, string groupNamePattern, 
+    public Task CancelFuzzyWatchAsync(string dataIdPattern, string groupNamePattern,
         IConfigFuzzyWatchEventWatcher watcher, CancellationToken cancellationToken = default)
     {
         _fuzzyWatchManager.RemoveWatcher(dataIdPattern, groupNamePattern, GetTenant() ?? "", watcher);
-        _logger?.LogDebug("Cancelled fuzzy watch for dataId={DataIdPattern}, group={GroupPattern}", 
+        _logger?.LogDebug("Cancelled fuzzy watch for dataId={DataIdPattern}, group={GroupPattern}",
             dataIdPattern, groupNamePattern);
         return Task.CompletedTask;
     }
@@ -357,12 +357,12 @@ public class NacosConfigService : IConfigService
                     continue;
                 }
 
-                _logger?.LogDebug("Long polling for {Count} configs: {Configs}", 
+                _logger?.LogDebug("Long polling for {Count} configs: {Configs}",
                     listeningConfigs.Count,
                     string.Join(", ", listeningConfigs.Select(c => $"{c.DataId}@{c.Group}(md5={c.Md5})")));
 
                 var changedConfigs = await CheckConfigChangesAsync(listeningConfigs, cancellationToken);
-                
+
                 if (changedConfigs.Count > 0)
                 {
                     _logger?.LogInformation("Detected {Count} config changes", changedConfigs.Count);
@@ -420,11 +420,11 @@ public class NacosConfigService : IConfigService
         try
         {
             _logger?.LogDebug("Checking config changes, body: {Body}", body);
-            
+
             var response = await _httpClient.PostWithHeadersAsync(
-                ListenerApiPath, 
-                null, 
-                body, 
+                ListenerApiPath,
+                null,
+                body,
                 headers,
                 _options.LongPollTimeout + 5000, // Add buffer to HTTP timeout
                 cancellationToken);
@@ -434,11 +434,11 @@ public class NacosConfigService : IConfigService
             if (!string.IsNullOrEmpty(response))
             {
                 _logger?.LogInformation("Config change detected in response");
-                
+
                 // The response may be URL-encoded, decode it first
                 var decodedResponse = Uri.UnescapeDataString(response);
                 _logger?.LogDebug("Decoded response: '{DecodedResponse}'", decodedResponse);
-                
+
                 // Parse changed config keys
                 // Response format (without tenant): dataId\x02group\x01
                 // Response format (with tenant): dataId\x02group\x02tenant\x01
@@ -472,7 +472,7 @@ public class NacosConfigService : IConfigService
         return changedConfigs;
     }
 
-    private async Task NotifyListenersAsync(string dataId, string group, string? tenant, 
+    private async Task NotifyListenersAsync(string dataId, string group, string? tenant,
         CancellationToken cancellationToken)
     {
         try
@@ -542,7 +542,7 @@ public class NacosConfigService : IConfigService
 
     #region Filter Chain Methods
 
-    private async Task<string?> ApplyGetFilterAsync(string dataId, string group, string? content, 
+    private async Task<string?> ApplyGetFilterAsync(string dataId, string group, string? content,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(content) || !_filterChainManager.HasFilters)
@@ -610,8 +610,9 @@ public class NacosConfigService : IConfigService
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+            return;
+
         await _cts.CancelAsync();
         _cts.Dispose();
         _httpClient.Dispose();

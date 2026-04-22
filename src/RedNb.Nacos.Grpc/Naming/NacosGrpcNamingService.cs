@@ -65,7 +65,8 @@ public class NacosGrpcNamingService : INamingService
     /// </summary>
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
 
         await _grpcClient.ConnectAsync(cancellationToken);
         _isHealthy = true;
@@ -1062,8 +1063,10 @@ public class NacosGrpcNamingService : INamingService
 
     private static bool MatchesPattern(string value, string pattern)
     {
-        if (pattern == "*") return true;
-        if (string.IsNullOrEmpty(pattern)) return true;
+        if (pattern == "*")
+            return true;
+        if (string.IsNullOrEmpty(pattern))
+            return true;
 
         var regexPattern = "^" + Regex.Escape(pattern)
             .Replace("\\*", ".*")
@@ -1074,8 +1077,10 @@ public class NacosGrpcNamingService : INamingService
 
     private static Instance? SelectByRandomWeight(List<Instance> instances)
     {
-        if (instances.Count == 0) return null;
-        if (instances.Count == 1) return instances[0];
+        if (instances.Count == 0)
+            return null;
+        if (instances.Count == 1)
+            return instances[0];
 
         var totalWeight = instances.Sum(i => i.Weight);
         if (totalWeight <= 0)
@@ -1124,7 +1129,8 @@ public class NacosGrpcNamingService : INamingService
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         await _cts.CancelAsync();
@@ -1132,7 +1138,9 @@ public class NacosGrpcNamingService : INamingService
         // Wait for update task
         if (_updateTask != null)
         {
-            try { await _updateTask.WaitAsync(TimeSpan.FromSeconds(2)); } catch { /* Ignore */ }
+            try
+            { await _updateTask.WaitAsync(TimeSpan.FromSeconds(2)); }
+            catch { /* Ignore */ }
         }
 
         await _redoService.DisposeAsync();

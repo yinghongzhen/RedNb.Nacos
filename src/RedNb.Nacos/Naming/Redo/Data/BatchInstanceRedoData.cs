@@ -40,9 +40,12 @@ public class BatchInstanceRedoData : InstanceRedoData
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        if (this == obj) return true;
-        if (obj is not BatchInstanceRedoData other) return false;
-        if (!base.Equals(obj)) return false;
+        if (this == obj)
+            return true;
+        if (obj is not BatchInstanceRedoData other)
+            return false;
+        if (!base.Equals(obj))
+            return false;
         return Instances.SequenceEqual(other.Instances);
     }
 

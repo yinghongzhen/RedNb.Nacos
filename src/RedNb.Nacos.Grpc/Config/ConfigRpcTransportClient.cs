@@ -48,7 +48,7 @@ internal class ConfigRpcTransportClient : IAsyncDisposable
     /// <summary>
     /// Queries configuration from server.
     /// </summary>
-    public async Task<ConfigQueryResponse?> QueryConfigAsync(string dataId, string group, string? tenant, 
+    public async Task<ConfigQueryResponse?> QueryConfigAsync(string dataId, string group, string? tenant,
         string? tag = null, CancellationToken cancellationToken = default)
     {
         var request = new ConfigQueryRequest
@@ -186,11 +186,11 @@ internal class ConfigRpcTransportClient : IAsyncDisposable
                 case ConfigChangeNotifyRequest.TYPE:
                     HandleConfigChangeNotify(body);
                     break;
-                    
+
                 case ConfigFuzzyWatchChangeNotifyRequest.TYPE:
                     HandleFuzzyWatchChangeNotify(body);
                     break;
-                    
+
                 default:
                     _logger?.LogDebug("Received unknown config push type: {Type}", type);
                     break;
@@ -209,7 +209,7 @@ internal class ConfigRpcTransportClient : IAsyncDisposable
             var request = JsonSerializer.Deserialize<ConfigChangeNotifyRequest>(body, _jsonOptions);
             if (request != null)
             {
-                _logger?.LogDebug("Received config change notify: {DataId}@{Group}", 
+                _logger?.LogDebug("Received config change notify: {DataId}@{Group}",
                     request.DataId, request.Group);
                 OnConfigChanged?.Invoke(request);
             }
@@ -227,7 +227,7 @@ internal class ConfigRpcTransportClient : IAsyncDisposable
             var request = JsonSerializer.Deserialize<ConfigFuzzyWatchChangeNotifyRequest>(body, _jsonOptions);
             if (request != null)
             {
-                _logger?.LogDebug("Received fuzzy watch change notify: {DataId}@{Group}, Type={ChangeType}", 
+                _logger?.LogDebug("Received fuzzy watch change notify: {DataId}@{Group}, Type={ChangeType}",
                     request.DataId, request.Group, request.ChangedType);
                 OnFuzzyWatchChanged?.Invoke(request);
             }
@@ -240,7 +240,8 @@ internal class ConfigRpcTransportClient : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         _grpcClient.UnregisterPushHandler("config");

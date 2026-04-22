@@ -1,27 +1,27 @@
 namespace RedNb.Nacos.Redo;
 
 /// <summary>
-/// Redo ²Ù×÷ÀàĞÍÃ¶¾Ù
+/// Redo æ“ä½œç±»å‹æšä¸¾
 /// </summary>
 public enum RedoType
 {
     /// <summary>
-    /// ÎŞ²Ù×÷
+    /// æ— æ“ä½œ
     /// </summary>
     None,
 
     /// <summary>
-    /// ×¢²á²Ù×÷
+    /// æ³¨å†Œæ“ä½œ
     /// </summary>
     Register,
 
     /// <summary>
-    /// ×¢Ïú²Ù×÷
+    /// æ³¨é”€æ“ä½œ
     /// </summary>
     Unregister,
 
     /// <summary>
-    /// ÒÆ³ı²Ù×÷
+    /// ç§»é™¤æ“ä½œ
     /// </summary>
     Remove
 }

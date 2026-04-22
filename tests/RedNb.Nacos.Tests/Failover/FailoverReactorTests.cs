@@ -278,7 +278,7 @@ public class FailoverReactorTests : IDisposable
         // Arrange
         var serviceInfo = new ServiceInfo { Name = "test-service" };
         _reactor.SetFailoverData("key", FailoverData<ServiceInfo>.CreateForNaming("key", serviceInfo));
-        
+
         FailoverDataChangedEventArgs<ServiceInfo>? eventArgs = null;
         _reactor.DataChanged += (sender, args) => eventArgs = args;
 
