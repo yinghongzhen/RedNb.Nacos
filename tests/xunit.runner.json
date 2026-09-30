@@ -1,0 +1,6 @@
+{
+  "$schema": "https://xunit.net/schema/v4.0/xunit.runner.schema.json",
+  "parallelMode": "collections",
+  "parallelizeAssembly": false,
+  "preEnumerateTheories": true
+}

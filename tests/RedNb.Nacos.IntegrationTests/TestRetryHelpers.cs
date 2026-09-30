@@ -1,5 +1,5 @@
 using RedNb.Nacos;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace RedNb.Nacos.IntegrationTests;
 

@@ -32,7 +32,7 @@ public class NacosServerFixture : IAsyncLifetime
     private const int PollIntervalSeconds = 3;
     private static readonly TimeSpan MaxProbeTimeout = TimeSpan.FromSeconds(10);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Deadline-based wait: elapsed time is bounded by StartPeriodSeconds
         // regardless of per-attempt timeouts.
@@ -101,8 +101,8 @@ public class NacosServerFixture : IAsyncLifetime
             "Please ensure Nacos 3.x is running before executing integration tests.");
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }

@@ -3,7 +3,6 @@ using RedNb.Nacos.Http;
 using RedNb.Nacos;
 using RedNb.Nacos.Naming;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace RedNb.Nacos.IntegrationTests;
 
@@ -33,13 +32,13 @@ public class NamingServiceIntegrationTests : IAsyncLifetime
         _factory = new NacosFactory();
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _namingService = _factory.CreateNamingService(_options);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_namingService is IAsyncDisposable disposable)
         {

@@ -6,7 +6,6 @@ using RedNb.Nacos.Ai.Listener;
 using RedNb.Nacos.Ai.Models.A2a;
 using RedNb.Nacos.Ai.Models.Mcp;
 using Xunit;
-using Xunit.Abstractions;
 using static RedNb.Nacos.IntegrationTests.TestRetryHelpers;
 
 namespace RedNb.Nacos.IntegrationTests;
@@ -32,13 +31,13 @@ public class AiServiceIntegrationTests : IAsyncLifetime
         };
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _aiService = new NacosFactory().CreateAiService(_options);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_aiService is IAsyncDisposable d) await d.DisposeAsync();
     }

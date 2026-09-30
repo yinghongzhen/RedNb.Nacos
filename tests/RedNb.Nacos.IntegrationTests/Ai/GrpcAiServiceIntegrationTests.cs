@@ -7,7 +7,6 @@ using RedNb.Nacos.Ai.Models.Mcp;
 using RedNb.Nacos.Grpc;
 using RedNb.Nacos.Grpc.Ai;
 using Xunit;
-using Xunit.Abstractions;
 using static RedNb.Nacos.IntegrationTests.TestRetryHelpers;
 
 namespace RedNb.Nacos.IntegrationTests.Ai;
@@ -21,7 +20,7 @@ public class GrpcAiServiceIntegrationTests : IAsyncLifetime
 
     public GrpcAiServiceIntegrationTests(ITestOutputHelper output) { _output = output; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var options = new NacosClientOptions
         {
@@ -50,7 +49,7 @@ public class GrpcAiServiceIntegrationTests : IAsyncLifetime
         });
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_grpcAi is IAsyncDisposable d) await d.DisposeAsync();
         if (_httpAi is IAsyncDisposable h) await h.DisposeAsync();

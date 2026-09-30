@@ -3,7 +3,6 @@ using RedNb.Nacos.Grpc;
 using RedNb.Nacos;
 using RedNb.Nacos.Config;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace RedNb.Nacos.IntegrationTests;
 
@@ -33,13 +32,13 @@ public class ConfigServiceIntegrationTests : IAsyncLifetime
         _factory = new NacosGrpcFactory();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _configService = await NacosGrpcFactory.CreateConfigServiceAsync(_options);
 
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_configService is IAsyncDisposable disposable)
         {

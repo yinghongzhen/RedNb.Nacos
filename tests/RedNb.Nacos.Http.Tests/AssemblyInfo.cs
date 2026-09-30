@@ -1,4 +1,4 @@
-using Xunit;
+using Xunit.v3;
 
 // Each HTTP fixture hosts its own server; bound test concurrency across machines.
-[assembly: CollectionBehavior(MaxParallelThreads = 2)]
+[assembly: Parallelization(MaxThreads = 2)]

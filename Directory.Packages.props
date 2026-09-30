@@ -41,10 +41,9 @@
     <PackageVersion Include="YamlDotNet" Version="16.3.0" Condition="'$(TargetFramework)' == 'net8.0'" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" Condition="'$(TargetFramework)' == 'net10.0'" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" Condition="'$(TargetFramework)' == 'net8.0'" />
-    <PackageVersion Include="xunit" Version="2.9.3" Condition="'$(TargetFramework)' == 'net10.0'" />
-    <PackageVersion Include="xunit" Version="2.9.3" Condition="'$(TargetFramework)' == 'net8.0'" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" Condition="'$(TargetFramework)' == 'net10.0'" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <!-- xUnit.net v3; keep VSTest/TRX/coverlet rather than enabling MTP implicitly. -->
+    <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
   </ItemGroup>
 </Project>
 

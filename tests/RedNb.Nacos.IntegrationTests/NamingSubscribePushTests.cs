@@ -3,7 +3,6 @@ using RedNb.Nacos;
 using RedNb.Nacos.Naming;
 using RedNb.Nacos.Grpc;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace RedNb.Nacos.IntegrationTests;
 
@@ -29,7 +28,7 @@ public class NamingSubscribePushTests : IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _options = new NacosClientOptions
         {
@@ -42,7 +41,7 @@ public class NamingSubscribePushTests : IAsyncLifetime
         _service = await NacosGrpcFactory.CreateNamingServiceAsync(_options);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_service is not null)
         {

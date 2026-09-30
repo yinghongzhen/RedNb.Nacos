@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using RedNb.Nacos.Config;
 using RedNb.Nacos.Grpc;
 using RedNb.Nacos.Grpc.Ai;
@@ -9,7 +10,10 @@ namespace RedNb.Nacos.IntegrationTests;
 
 public sealed class LocalFaultFactAttribute : FactAttribute
 {
-    public LocalFaultFactAttribute()
+    public LocalFaultFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = 0)
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (Environment.GetEnvironmentVariable("NACOS_TEST_FAULT_CONTAINER") == null)
             Skip = "Local container fault injection is enabled only by NACOS_TEST_FAULT_CONTAINER.";
