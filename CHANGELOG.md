@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1（待发布）
+
+- 五个测试项目升级到 xUnit.net v3，继续使用 VSTest、TRX 和 Coverlet。
+- 适配异步 fixture 生命周期、测试输出接口、并发限制和本地故障注入特性。
+- SDK 公共 API 和运行时功能保持不变；本次为测试基础设施维护版本。
+- 升级验证与尚未完成的真实集成测试见 [xUnit v3 升级报告](docs/XUNIT_V3_MIGRATION.md)。
+
 ## 2.1.0（2026-09-15）
 
 已发布到 GitHub Release 与 NuGet.org，见 [发布记录](docs/RELEASE_2.1.0.md)。

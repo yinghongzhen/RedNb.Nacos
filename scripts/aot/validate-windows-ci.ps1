@@ -42,9 +42,9 @@ try {
         dotnet pack $project.FullName -c Release -o artifacts/packages
         if ($LASTEXITCODE) { throw 'Pack failed' }
     }
-    python scripts/verify-packages.py artifacts/packages --version 2.1.0
+    python scripts/verify-packages.py artifacts/packages --version 2.1.1
     if ($LASTEXITCODE) { throw 'Invalid packages' }
-    & "$PSScriptRoot/validate.ps1" -Framework $Framework -Rid win-x64 -App $App -PackageDirectory artifacts/packages -Version 2.1.0
+    & "$PSScriptRoot/validate.ps1" -Framework $Framework -Rid win-x64 -App $App -PackageDirectory artifacts/packages -Version 2.1.1
 } catch {
     Get-ChildItem $nacosDirectory -Recurse -Filter '*.log' | ForEach-Object { Get-Content $_.FullName -Tail 40 }
     throw

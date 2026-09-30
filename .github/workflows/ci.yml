@@ -50,7 +50,7 @@ jobs:
       - name: Validate packages
         run: |
           dotnet pack RedNb.Nacos.sln --no-build -c Release -o artifacts/packages
-          python3 scripts/verify-packages.py artifacts/packages --version 2.1.0
+          python3 scripts/verify-packages.py artifacts/packages --version 2.1.1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

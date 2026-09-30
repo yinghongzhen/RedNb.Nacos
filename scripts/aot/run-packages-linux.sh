@@ -6,7 +6,7 @@ mkdir -p /results/packages
 for project in src/*/*.csproj; do
   dotnet pack "$project" -c Release -o /results/packages
 done
-# Keep SDK packages from earlier 2.1.0 development builds out of the consumer.
+# Keep SDK packages from earlier development builds out of the consumer.
 # Reuse immutable third-party packages without downloading the toolchain again.
 stamp=$(sha256sum /results/packages/*.nupkg | sha256sum | cut -d ' ' -f 1)
 export NUGET_PACKAGES="/work/package-cache/$stamp"
@@ -21,6 +21,6 @@ for framework in net8.0 net10.0; do
   for app in Aot AotWeb; do
     pwsh -NoProfile -File scripts/aot/validate.ps1 \
       -Framework "$framework" -Rid linux-x64 -App "$app" \
-      -PackageDirectory /results/packages -Version 2.1.0 -OutputRoot /results/package-validation
+      -PackageDirectory /results/packages -Version 2.1.1 -OutputRoot /results/package-validation
   done
 done
