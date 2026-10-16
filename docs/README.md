@@ -1,5 +1,6 @@
 # 文档索引
 
+- [2.2.0 发布与验收](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0)：Aspire 一键示例、健康检查修复与完整 CI 结果；启动方式见[构建与测试](ENVIRONMENT_BOOTSTRAP.md)。
 - [2.1.1 发布与验收](XUNIT_V3_MIGRATION.md)：xUnit v3 迁移、完整 CI、Release 与 NuGet 发布结果。
 - [2.1.0 发布记录](RELEASE_2.1.0.md)：Release、NuGet、构建来源与校验结果。
 

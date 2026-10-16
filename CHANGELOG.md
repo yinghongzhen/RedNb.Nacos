@@ -1,11 +1,18 @@
 # Changelog
 
-## 2.2.0（待发布）
+## 2.2.0（2026-10-17）
+
+已发布 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0)；[NuGet 可信发布 38959494354](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38959494354) 成功推送六包。[CI 38958382389](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38958382389) 的 1534 次测试、11 项检查全部通过（0 失败、0 跳过），包含随机/显式密码的两次完整 Aspire 启动，以及原生 SDK/Web 源码和 NuGet 消费者验证。
+
+发布提交为 `4b1882417ed21044fdb27f7fa2b07538faca6949`，六包来自该 CI 的 `validation-results`（artifact ID `12072431010`），Release 附件 SHA-256 与 CI 产物逐项一致。Aspire 和 MessagePack 未进入六个 SDK 包的依赖。
+
+六个包均已从 NuGet 公共地址重新下载，身份、版本和内容校验通过；除 NuGet 仓库签名外，包内文件集合与字节内容均与 CI/Release 附件一致。
 
 - 修复 #9：健康检查重复拼接协议头的问题；统一 API/Console URL 的协议处理，支持裸地址、显式 HTTP/HTTPS、TLS 默认值及带协议的 Console 地址推导。
 - 实现 #3：新增 Aspire AppHost，F5 启动 Nacos 3.2.4、初始化鉴权和示例配置，再启动 Web API、Console、echo AI 示例。
 - 由 AppHost 分配端口并计算 gRPC 偏移；服务注册使用实际可访问的 Web API 地址，示例健康检查探测配置的控制台。
 - 新增 URL、实际 HTTP 健康检查和 Aspire 全流程测试；Aspire 依赖仅用于示例与测试，SDK 继续支持 .NET 8/10。
+- TRX 校验器拒绝整体失败但失败计数为零的运行，避免中断的测试被统计为通过。
 
 ## 2.1.1（2026-10-17）
 

@@ -10,6 +10,8 @@ English | [简体中文](README.md)
 
 A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Find the current stable version on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/latest). SDK and server versions are numbered independently.
 
+**2.2.0 is released:** adds one-command Aspire samples and fixes duplicated schemes in HTTP health-check URLs. All 1,534 tests and 11 CI checks passed. See the [release and validation results](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0).
+
 **2.1.1 maintenance update:** migrates the test infrastructure to xUnit.net v3. Public SDK APIs and runtime behavior are unchanged. All 1,500 tests and 11 CI checks passed; see the [migration report](docs/XUNIT_V3_MIGRATION.md).
 
 Version 2.0.0 changes public namespaces and defaults Config/Naming to gRPC. Read the [migration guide](docs/MIGRATION.md) before upgrading from 1.x. Nacos 2.x is not supported; other 3.x releases require explicit validation.
