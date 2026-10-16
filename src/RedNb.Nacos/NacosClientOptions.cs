@@ -158,9 +158,8 @@ public class NacosClientOptions
     /// </summary>
     public string GetBaseUrl(string serverAddress)
     {
-        var scheme = EnableTls ? "https" : "http";
-        var contextPath = string.IsNullOrWhiteSpace(ContextPath) ? "" : $"/{ContextPath.TrimStart('/')}";
-        return $"{scheme}://{serverAddress}{contextPath}";
+        var contextPath = string.IsNullOrWhiteSpace(ContextPath) ? "" : $"/{ContextPath.Trim('/')}";
+        return $"{GetConsoleBaseUrl(serverAddress)}{contextPath}";
     }
 
     /// <summary>
@@ -193,15 +192,28 @@ public class NacosClientOptions
     /// <see cref="GetBaseUrl"/>, no <see cref="ContextPath"/> is appended: the
     /// console listener expects paths under <c>/v3/console/**</c> with no
     /// <c>/nacos</c> prefix.
+    /// An explicit HTTP/HTTPS scheme takes precedence over <see cref="EnableTls"/>;
+    /// that option selects the default scheme only for bare host:port addresses.
     /// </summary>
     public string GetConsoleBaseUrl(string serverAddress)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serverAddress);
+        var address = serverAddress.Trim().TrimEnd('/');
+        if (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            address.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return address;
+        }
         var scheme = EnableTls ? "https" : "http";
-        return $"{scheme}://{serverAddress}";
+        return $"{scheme}://{address}";
     }
 
     private static string SubstituteConsolePort(string hostPort)
     {
+        if (hostPort.Contains("://", StringComparison.Ordinal))
+        {
+            return new UriBuilder(hostPort) { Port = 8080 }.Uri.GetLeftPart(UriPartial.Authority);
+        }
         var idx = hostPort.LastIndexOf(':');
         // IPv6 literal — leave as-is (operator can override via explicit ConsoleAddresses)
         if (hostPort.Count(c => c == ':') > 1) return hostPort;

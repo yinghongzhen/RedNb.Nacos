@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RedNb.Nacos\RedNb.Nacos.csproj" />
     <ProjectReference Include="..\..\src\RedNb.Nacos.Http\RedNb.Nacos.Http.csproj" />
+    <ProjectReference Include="..\..\src\RedNb.Nacos.AspNetCore\RedNb.Nacos.AspNetCore.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

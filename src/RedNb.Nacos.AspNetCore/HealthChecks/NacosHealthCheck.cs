@@ -53,12 +53,7 @@ public class NacosHealthCheck : IHealthCheck
             httpClient.Timeout = TimeSpan.FromSeconds(5);
 
             var serverAddress = _options.GetConsoleAddressList().First();
-            if (!serverAddress.StartsWith("http"))
-            {
-                serverAddress = $"http://{serverAddress}";
-            }
-
-            var response = await httpClient.GetAsync(
+            using var response = await httpClient.GetAsync(
                 $"{_options.GetConsoleBaseUrl(serverAddress).TrimEnd('/')}/v3/console/health/readiness",
                 cancellationToken);
 
