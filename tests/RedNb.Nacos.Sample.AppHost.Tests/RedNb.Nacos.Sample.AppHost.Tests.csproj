@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../xunit.runner.json" Link="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="MessagePack" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3.mtp-off" PrivateAssets="all" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <ProjectReference Include="../../samples/RedNb.Nacos.Sample.AppHost/RedNb.Nacos.Sample.AppHost.csproj" />
+    <ProjectReference Include="../../src/RedNb.Nacos.AspNetCore/RedNb.Nacos.AspNetCore.csproj" />
+    <ProjectReference Include="../../src/RedNb.Nacos.Grpc/RedNb.Nacos.Grpc.csproj" />
+  </ItemGroup>
+</Project>

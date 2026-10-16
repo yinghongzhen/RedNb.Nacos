@@ -10,7 +10,7 @@
 
 面向 Nacos 3.2.4 的 .NET 8 / .NET 10 SDK。配置和服务发现默认使用 gRPC；AI 与管理操作按服务器实际能力选择 HTTP Client、Admin 或 Console 通道。
 
-当前稳定版 **2.1.1** 已发布到 [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.1) 和 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1)。SDK 版本与 Nacos 服务端版本分别编号。
+当前稳定版可在 [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/) 和 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/latest) 查看。SDK 版本与 Nacos 服务端版本分别编号。
 
 **2.1.1 维护更新**：升级 xUnit.net v3 测试基础设施，SDK 公共 API 和运行时功能保持一致。1500 次测试及 CI 11 项检查全部通过，见 [xUnit v3 升级报告](docs/XUNIT_V3_MIGRATION.md)。
 
@@ -23,19 +23,19 @@
 普通 .NET 应用推荐安装依赖注入包：
 
 ```bash
-dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.1
+dotnet add package RedNb.Nacos.DependencyInjection
 ```
 
 ASP.NET Core 应用需要配置热更新、健康检查和服务注册时，安装：
 
 ```bash
-dotnet add package RedNb.Nacos.AspNetCore --version 2.1.1
+dotnet add package RedNb.Nacos.AspNetCore
 ```
 
 需要全部组件时，可安装聚合包：
 
 ```bash
-dotnet add package RedNb.Nacos.All --version 2.1.1
+dotnet add package RedNb.Nacos.All
 ```
 
 上述包会自动引入所需依赖，无需把六个包全部手动添加。
@@ -76,6 +76,16 @@ var content = await config.GetConfigAsync("app-config", "DEFAULT_GROUP", 5000);
 多个 Nacos 环境使用 `services.AddNacos("environment-name", configure)`，再通过 `GetRequiredKeyedService<IConfigService>("environment-name")` 获取。不同名称的客户端和缓存相互隔离。
 
 不使用 DI 时可用 `NacosGrpcFactory.CreateConfigServiceAsync(options)`、`CreateNamingServiceAsync(options)`；AI 推荐 `new NacosAiClient(options)`，不需要调用者自行组合两种通道。具体使用见 [samples](samples/README.md)。
+
+## 一键运行示例
+
+启动 Docker，将 `RedNb.Nacos.Sample.AppHost` 设为启动项目按 F5，或使用 .NET 10 SDK 运行：
+
+```bash
+dotnet run --project samples/RedNb.Nacos.Sample.AppHost
+```
+
+Aspire 自动启动 Nacos 3.2.4、初始化本地鉴权与示例配置，再启动 Web API、Console 和本地 echo AI 示例；动态端口及 gRPC 偏移自动注入。具体参数、Dashboard 与生命周期说明见[构建和测试指南](docs/ENVIRONMENT_BOOTSTRAP.md)。Aspire 仅用于示例，安装 SDK 无需引入它。
 
 ## 环境和验证
 

@@ -7,6 +7,8 @@ if (string.IsNullOrWhiteSpace(dataId)) { Console.Error.WriteLine("Set NACOS_DATA
 var options = new NacosClientOptions
 {
     ServerAddresses = Environment.GetEnvironmentVariable("NACOS_SERVER") ?? "localhost:8848",
+    ConsoleAddresses = Environment.GetEnvironmentVariable("NACOS_CONSOLE") ?? "",
+    GrpcPortOffset = int.Parse(Environment.GetEnvironmentVariable("NACOS_GRPC_PORT_OFFSET") ?? "1000", System.Globalization.CultureInfo.InvariantCulture),
     Username = Environment.GetEnvironmentVariable("NACOS_USERNAME"),
     Password = Environment.GetEnvironmentVariable("NACOS_PASSWORD"),
     Namespace = Environment.GetEnvironmentVariable("NACOS_NAMESPACE") ?? ""

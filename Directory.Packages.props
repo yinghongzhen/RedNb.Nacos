@@ -1,6 +1,10 @@
 <Project>
   <PropertyGroup><ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally></PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.1" />
+    <!-- Aspire's transitive 2.5.302 has GHSA-qhrr-8q5h-9q3h; pin the compatible patched release. -->
+    <PackageVersion Include="MessagePack" Version="2.5.303" />
     <PackageVersion Include="FluentAssertions" Version="8.3.0" Condition="'$(TargetFramework)' == 'net10.0'" />
     <PackageVersion Include="FluentAssertions" Version="8.3.0" Condition="'$(TargetFramework)' == 'net8.0'" />
     <PackageVersion Include="Google.Protobuf" Version="3.33.3" Condition="'$(TargetFramework)' == 'net10.0'" />

@@ -46,11 +46,11 @@ jobs:
       - name: Unit and live integration tests
         run: dotnet test RedNb.Nacos.sln --no-build -c Release -m:1 -p:TestTfmsInParallel=false --logger trx --results-directory artifacts/test-results
       - name: Reject empty test runs
-        run: python3 scripts/verify-test-results.py artifacts/test-results --minimum-runs 9
+        run: python3 scripts/verify-test-results.py artifacts/test-results --minimum-runs 10
       - name: Validate packages
         run: |
           dotnet pack RedNb.Nacos.sln --no-build -c Release -o artifacts/packages
-          python3 scripts/verify-packages.py artifacts/packages --version 2.1.1
+          python3 scripts/verify-packages.py artifacts/packages --version 2.2.0
       - uses: actions/upload-artifact@v4
         if: always()
         with:

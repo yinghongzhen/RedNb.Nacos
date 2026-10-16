@@ -26,6 +26,7 @@ internal static class Program
         var options = new NacosClientOptions
         {
             ServerAddresses = serverAddresses,
+            ConsoleAddresses = config["Nacos:ConsoleAddresses"] ?? string.Empty,
             Username = username,
             Password = password,
             Namespace = config["Nacos:Namespace"] ?? string.Empty,

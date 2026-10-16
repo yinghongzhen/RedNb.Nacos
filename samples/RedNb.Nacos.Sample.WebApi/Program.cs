@@ -23,8 +23,10 @@ builder.Services.AddNacos(options =>
 });
 
 // Add Nacos health checks
+var healthOptions = new NacosClientOptions();
+builder.Configuration.GetSection("Nacos").Bind(healthOptions);
 builder.Services.AddHealthChecks()
-    .AddNacos();
+    .AddNacos(healthOptions);
 
 // Add controllers and Swagger
 builder.Services.AddControllers();
@@ -46,11 +48,13 @@ app.MapControllers();
 
 // Map health check endpoint
 app.MapHealthChecks("/health");
+app.MapGet("/demo", () => new { Message = app.Configuration["Demo:Message"] });
 
 // Use Nacos service registry for automatic registration
 app.UseNacosServiceRegistry(
     serviceName: "sample-webapi",
-    port: 5000,
+    ip: builder.Configuration["ServiceRegistry:Ip"],
+    port: builder.Configuration.GetValue<int>("ServiceRegistry:Port", 5000),
     metadata: new Dictionary<string, string>
     {
         { "version", "1.0.0" },

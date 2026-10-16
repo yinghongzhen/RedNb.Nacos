@@ -8,7 +8,7 @@
 
 English | [简体中文](README.md)
 
-A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Stable version **2.1.1** is available on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.1) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1). SDK and server versions are numbered independently.
+A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Find the current stable version on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/latest). SDK and server versions are numbered independently.
 
 **2.1.1 maintenance update:** migrates the test infrastructure to xUnit.net v3. Public SDK APIs and runtime behavior are unchanged. All 1,500 tests and 11 CI checks passed; see the [migration report](docs/XUNIT_V3_MIGRATION.md).
 
@@ -21,22 +21,32 @@ Version 2.0.0 changes public namespaces and defaults Config/Naming to gRPC. Read
 For typical .NET applications:
 
 ```bash
-dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.1
+dotnet add package RedNb.Nacos.DependencyInjection
 ```
 
 For ASP.NET Core configuration reload, health checks and service registration:
 
 ```bash
-dotnet add package RedNb.Nacos.AspNetCore --version 2.1.1
+dotnet add package RedNb.Nacos.AspNetCore
 ```
 
 For all components:
 
 ```bash
-dotnet add package RedNb.Nacos.All --version 2.1.1
+dotnet add package RedNb.Nacos.All
 ```
 
 Required dependencies are installed automatically; you do not need to add all six packages manually.
+
+## Run all samples with Aspire
+
+Start Docker and set `RedNb.Nacos.Sample.AppHost` as the startup project in your IDE, or run with the .NET 10 SDK:
+
+```bash
+dotnet run --project samples/RedNb.Nacos.Sample.AppHost
+```
+
+The AppHost starts Nacos 3.2.4, initializes local authentication and seed configuration, then launches the Web API, Console and local echo AI samples. Ports and the gRPC offset are injected automatically. Aspire is confined to samples and tests; SDK consumers do not need it. See the [setup guide](docs/ENVIRONMENT_BOOTSTRAP.md).
 
 ## NativeAOT (2.1.0)
 
