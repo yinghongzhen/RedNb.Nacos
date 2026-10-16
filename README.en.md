@@ -8,7 +8,9 @@
 
 English | [简体中文](README.md)
 
-A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Stable version **2.1.0** is available on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.0) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.0). SDK and server versions are numbered independently.
+A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Stable version **2.1.1** is available on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.1) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1). SDK and server versions are numbered independently.
+
+**2.1.1 maintenance update:** migrates the test infrastructure to xUnit.net v3. Public SDK APIs and runtime behavior are unchanged. All 1,500 tests and 11 CI checks passed; see the [migration report](docs/XUNIT_V3_MIGRATION.md).
 
 Version 2.0.0 changes public namespaces and defaults Config/Naming to gRPC. Read the [migration guide](docs/MIGRATION.md) before upgrading from 1.x. Nacos 2.x is not supported; other 3.x releases require explicit validation.
 
@@ -19,19 +21,19 @@ Version 2.0.0 changes public namespaces and defaults Config/Naming to gRPC. Read
 For typical .NET applications:
 
 ```bash
-dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.0
+dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.1
 ```
 
 For ASP.NET Core configuration reload, health checks and service registration:
 
 ```bash
-dotnet add package RedNb.Nacos.AspNetCore --version 2.1.0
+dotnet add package RedNb.Nacos.AspNetCore --version 2.1.1
 ```
 
 For all components:
 
 ```bash
-dotnet add package RedNb.Nacos.All --version 2.1.0
+dotnet add package RedNb.Nacos.All --version 2.1.1
 ```
 
 Required dependencies are installed automatically; you do not need to add all six packages manually.

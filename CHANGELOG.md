@@ -1,11 +1,13 @@
 # Changelog
 
-## 2.1.1（待发布）
+## 2.1.1（2026-10-17）
+
+已发布 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1) 与六个 NuGet 包。[CI 38954662962](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38954662962) 的 1500 次测试及 11 项检查全部通过；[可信发布 38955578158](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38955578158) 成功。
 
 - 五个测试项目升级到 xUnit.net v3，继续使用 VSTest、TRX 和 Coverlet。
 - 适配异步 fixture 生命周期、测试输出接口、并发限制和本地故障注入特性。
 - SDK 公共 API 和运行时功能保持不变；本次为测试基础设施维护版本。
-- 升级验证与尚未完成的真实集成测试见 [xUnit v3 升级报告](docs/XUNIT_V3_MIGRATION.md)。
+- 升级前后对比及后续完整集成验收见 [xUnit v3 升级报告](docs/XUNIT_V3_MIGRATION.md)。
 
 ## 2.1.0（2026-09-15）
 

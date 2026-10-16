@@ -1,5 +1,20 @@
 # xUnit.net v3 升级报告
 
+## 2.1.1 发布验收补充（2026-10-17）
+
+本次发布提交为 `ca5d3f9ce1ac5a96552133b0b8ede655f143a133`，包版本为 2.1.1。[CI 38954662962](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38954662962) 已完成以下验证：
+
+- 9 次 TRX 运行共 1500 次测试全部通过，0 失败、0 跳过。其中包括 .NET 8/10 共 112 次真实 Nacos 3.2.4 集成测试和本地容器重启恢复测试。
+- 11 项 CI 检查全部成功：常规测试、两个框架的禁用反射运行，以及 .NET 8/10 × Windows/Linux 的原生 SDK 和 Minimal API 验证，含实际 NuGet 包消费者。
+- 六个包来自该 CI 的 `validation-results`（artifact ID `12069932607`），包内源码提交均匹配发布提交。
+- [GitHub v2.1.1](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1) 已发布六个附件，GitHub SHA-256 与 CI 产物逐个匹配。
+- [NuGet 可信发布 38955578158](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38955578158) 成功推送六个包。
+- 已从 NuGet 公共下载地址重新下载六个 2.1.1 包，包身份、依赖版本和内容校验通过。除 NuGet 添加的仓库签名外，包内文件集合及字节内容均与 CI/Release 附件一致。
+
+以下为 2026-09-29 本地迁移阶段的历史记录；其中“真实集成测试未完成”的限制已由上述 CI 验收补齐。ARM64、TLS/代理及外部 LLM 不在本次认证范围。
+
+## 本地迁移记录（2026-09-29）
+
 验证日期：2026-09-29。升级基线：`master / 12ed38f`。本次只调整测试基础设施，SDK 公共 API 和包版本 `2.1.0` 保持不变。
 
 ## 迁移内容

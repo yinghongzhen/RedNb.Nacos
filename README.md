@@ -10,7 +10,9 @@
 
 面向 Nacos 3.2.4 的 .NET 8 / .NET 10 SDK。配置和服务发现默认使用 gRPC；AI 与管理操作按服务器实际能力选择 HTTP Client、Admin 或 Console 通道。
 
-当前稳定版 **2.1.0** 已发布到 [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.0) 和 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.0)。SDK 版本与 Nacos 服务端版本分别编号。
+当前稳定版 **2.1.1** 已发布到 [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/2.1.1) 和 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.1.1)。SDK 版本与 Nacos 服务端版本分别编号。
+
+**2.1.1 维护更新**：升级 xUnit.net v3 测试基础设施，SDK 公共 API 和运行时功能保持一致。1500 次测试及 CI 11 项检查全部通过，见 [xUnit v3 升级报告](docs/XUNIT_V3_MIGRATION.md)。
 
 **2.1.0 已完成验收**：1500 项测试通过，CI 11 项检查全部成功。新增 Windows/Linux NativeAOT 支持与客户端级 JSON Context 注入，并修复 JSON 数值/容器、YAML 合并及 AI 管理接口契约。详细证据见 [2.1.0 验收报告](docs/NATIVEAOT_TEST_REPORT.md)。
 
@@ -21,19 +23,19 @@
 普通 .NET 应用推荐安装依赖注入包：
 
 ```bash
-dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.0
+dotnet add package RedNb.Nacos.DependencyInjection --version 2.1.1
 ```
 
 ASP.NET Core 应用需要配置热更新、健康检查和服务注册时，安装：
 
 ```bash
-dotnet add package RedNb.Nacos.AspNetCore --version 2.1.0
+dotnet add package RedNb.Nacos.AspNetCore --version 2.1.1
 ```
 
 需要全部组件时，可安装聚合包：
 
 ```bash
-dotnet add package RedNb.Nacos.All --version 2.1.0
+dotnet add package RedNb.Nacos.All --version 2.1.1
 ```
 
 上述包会自动引入所需依赖，无需把六个包全部手动添加。
