@@ -91,6 +91,8 @@ Aspire 自动启动 Nacos 3.2.4、初始化本地鉴权与示例配置，再启�
 
 ## 环境和验证
 
+2.3.0 增加多地址/多组件健康检查和 PEM 私有 CA、mTLS 传输配置，并修复订阅恢复、配置原子更新与请求超时。健康检查模式、HTTP 管道所有权及缓存格式迁移见[健康检查、TLS 与缓存迁移](docs/HEALTH_TLS.md)。升级前需在线预热 Naming 缓存，并重新生成手工维护的 HTTP failover 文件。
+
 - API 端口默认 8848，客户端 gRPC 默认 9848，控制台默认 8080；显式映射不同端口时请配置地址和 GrpcPortOffset。
 - 默认鉴权使用用户名密码/token。默认 Nacos 插件不提供本 SDK 旧版本假设的 AK/SK 登录接口。
 - [单机 Docker 部署](deploy/docker-compose/README.md)

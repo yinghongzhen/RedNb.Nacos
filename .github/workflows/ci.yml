@@ -8,6 +8,29 @@ on:
 permissions:
   contents: read
 jobs:
+  windows-transport:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [net8.0, net10.0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Windows TLS, health and issue regressions
+        run: dotnet test tests/RedNb.Nacos.Http.Tests/RedNb.Nacos.Http.Tests.csproj -c Release -f ${{ matrix.framework }} --filter FullyQualifiedName~Regression --logger trx --results-directory artifacts/windows-regression
+      - name: Validate regression results
+        run: python scripts/verify-test-results.py artifacts/windows-regression
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-regression-${{ matrix.framework }}
+          path: artifacts/windows-regression/
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -50,7 +73,7 @@ jobs:
       - name: Validate packages
         run: |
           dotnet pack RedNb.Nacos.sln --no-build -c Release -o artifacts/packages
-          python3 scripts/verify-packages.py artifacts/packages --version 2.2.0
+          python3 scripts/verify-packages.py artifacts/packages --version 2.3.0
       - uses: actions/upload-artifact@v4
         if: always()
         with:

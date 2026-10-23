@@ -52,6 +52,8 @@ The AppHost starts Nacos 3.2.4, initializes local authentication and seed config
 
 ## NativeAOT (2.1.0)
 
+Version 2.3.0 adds multi-address/component health checks and PEM CA/mTLS transport settings, with fixes for subscription recovery, atomic configuration reloads and request deadlines. See the [health, TLS and cache migration guide](docs/HEALTH_TLS.md). Warm the new Naming cache online and regenerate manually maintained HTTP failover files before relying on offline fallback.
+
 Validated targets are .NET 8 / .NET 10 on `win-x64` / `linux-x64`, for both the SDK client and a separate ASP.NET Core Minimal API. Validation includes project references, actual NuGet consumers, configuration, naming, AI lifecycles, ACK exchange and local server restart recovery.
 
 SDK protocol models use source-generated JSON metadata. Register application types through `NacosClientOptions.JsonTypeInfoResolver`; custom generic disk caches can receive `JsonTypeInfo<T>`. Regular JIT retains reflection fallback for application types. NativeAOT and JSON-reflection-disabled applications report unregistered types explicitly.

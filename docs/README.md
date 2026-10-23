@@ -1,5 +1,7 @@
 # 文档索引
 
+- [2.3.0 问题修复与验收](RELEASE_2.3.0.md)：#10–#19 的复现、修复及发布证据。
+- [健康检查、TLS 与缓存迁移](HEALTH_TLS.md)：多地址探测、HTTP 管道、PEM 证书及缓存升级。
 - [2.2.0 发布与验收](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0)：Aspire 一键示例、健康检查修复与完整 CI 结果；启动方式见[构建与测试](ENVIRONMENT_BOOTSTRAP.md)。
 - [2.1.1 发布与验收](XUNIT_V3_MIGRATION.md)：xUnit v3 迁移、完整 CI、Release 与 NuGet 发布结果。
 - [2.1.0 发布记录](RELEASE_2.1.0.md)：Release、NuGet、构建来源与校验结果。

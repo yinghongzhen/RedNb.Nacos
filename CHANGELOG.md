@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.0（待发布）
+
+- #10：健康检查支持 Config/Naming 状态、Server/Console 独立节点探测、Any/All、完整诊断、取消、并发及总时限；DI 使用可定制的命名 HttpClient 管道，直接构造支持外部客户端所有权。
+- #11–#14：恢复缓存命中后的 Naming 订阅、保留部分注销后的 redo、按集群隔离 Naming 磁盘缓存，修复 HTTP snapshot/failover 的键碰撞。
+- #15–#17：无效 JSON 不覆盖有效配置、不发成功通知；首次加载失败释放客户端；显式 reload 删除 optional 旧键并正确恢复来源优先级。
+- #18：认证锁等待、登录与请求共享单次超时预算。
+- #19：统一消费 PEM CA、客户端证书和私钥，支持私有 CA/mTLS 并保留证书链、主机名、有效期检查。
+- 缓存格式、全部节点失败状态及默认 DI 健康检查行为有所调整，升级前阅读[迁移说明](docs/HEALTH_TLS.md)。[逐项验收记录](docs/RELEASE_2.3.0.md)。
+
 ## 2.2.0（2026-10-17）
 
 已发布 [GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0)；[NuGet 可信发布 38959494354](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38959494354) 成功推送六包。[CI 38958382389](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/38958382389) 的 1534 次测试、11 项检查全部通过（0 失败、0 跳过），包含随机/显式密码的两次完整 Aspire 启动，以及原生 SDK/Web 源码和 NuGet 消费者验证。

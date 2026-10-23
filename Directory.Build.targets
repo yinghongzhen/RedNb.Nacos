@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
-    <Version>2.2.0</Version>
+    <Version>2.3.0</Version>
     <Authors>RedNb</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

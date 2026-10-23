@@ -44,7 +44,7 @@ dotnet build RedNb.Nacos.sln -c Release
 dotnet test RedNb.Nacos.sln --no-build -c Release -m:1 -p:TestTfmsInParallel=false --logger trx --results-directory artifacts/test-results
 python scripts/verify-test-results.py artifacts/test-results --minimum-runs 10
 dotnet pack RedNb.Nacos.sln --no-build -c Release -o artifacts/packages
-python scripts/verify-packages.py artifacts/packages --version 2.2.0
+python scripts/verify-packages.py artifacts/packages --version 2.3.0
 ```
 
 测试前使用新的结果目录，避免旧 TRX 混入统计。按项目和目标框架顺序执行，避免多个 WireMock 测试宿主争用本机资源。

@@ -5,7 +5,7 @@ param(
     [switch]$Managed,
     [string]$PackageDirectory,
     [string]$OutputRoot,
-    [string]$Version = '2.2.0'
+    [string]$Version = '2.3.0'
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
