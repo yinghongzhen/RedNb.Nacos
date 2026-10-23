@@ -31,7 +31,7 @@ public class SecurityProxy : IDisposable
     {
         _options = options;
         _logger = logger;
-        _httpClient = new HttpClient
+        _httpClient = new HttpClient(RedNb.Nacos.Utils.NacosTransport.CreateHandler(options))
         {
             Timeout = TimeSpan.FromMilliseconds(options.DefaultTimeout)
         };

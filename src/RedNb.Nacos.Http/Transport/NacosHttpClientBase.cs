@@ -48,18 +48,17 @@ public abstract class NacosHttpClientBase : IDisposable
         _options = options;
         _logger = logger;
         _serverListManager = serverListManager ?? new ServerListManager(options);
-        _securityProxy = new SecurityProxy(options, logger);
 
-        var handler = new HttpClientHandler
-        {
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
-        };
+        var handler = NacosTransport.CreateHandler(options);
 
         _httpClient = new HttpClient(handler)
         {
             // Set timeout to infinite - we'll control timeout per-request with CancellationToken
             Timeout = Timeout.InfiniteTimeSpan
         };
+
+        try { _securityProxy = new SecurityProxy(options, logger); }
+        catch { _httpClient.Dispose(); throw; }
 
         _httpClient.DefaultRequestHeaders.Add("Client-Version", NacosConstants.ClientVersion);
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "RedNb.Nacos.Http");
@@ -196,6 +195,8 @@ public abstract class NacosHttpClientBase : IDisposable
 
         // Use default timeout if not specified
         var effectiveTimeout = timeout > 0 ? timeout : _options.DefaultTimeout;
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
         Exception? lastException = null;
         var maxRetry = Math.Max(1, servers.Count);
@@ -205,9 +206,6 @@ public abstract class NacosHttpClientBase : IDisposable
             var server = _serverListManager.GetNextServer();
             var baseUrl = BuildBaseUrl(server);
 
-            // Create a timeout CancellationTokenSource for this request
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             try
             {
@@ -217,7 +215,7 @@ public abstract class NacosHttpClientBase : IDisposable
                 using var request = new HttpRequestMessage(method, url);
 
                 // Add authentication headers
-                await AddAuthHeadersAsync(request, cancellationToken);
+                await AddAuthHeadersAsync(request, linkedCts.Token);
 
                 if (body != null && (method == HttpMethod.Post || method == HttpMethod.Put))
                 {
@@ -234,7 +232,7 @@ public abstract class NacosHttpClientBase : IDisposable
                 }
 
                 using var response = await _httpClient.SendAsync(request, linkedCts.Token);
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var content = await response.Content.ReadAsStringAsync(linkedCts.Token);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -262,10 +260,11 @@ public abstract class NacosHttpClientBase : IDisposable
             }
             catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
             {
-                // Request timeout - this is a server issue, retry with next server
+                // The overall request budget has expired; do not restart it on another server.
                 _serverListManager.MarkServerUnhealthy(server);
                 lastException = new NacosException(NacosException.ServerError, "Request timeout", ex);
                 _logger?.LogWarning("Request to {Server} timed out after {Timeout}ms", server, effectiveTimeout);
+                throw lastException;
             }
             catch (HttpRequestException ex)
             {
@@ -304,6 +303,8 @@ public abstract class NacosHttpClientBase : IDisposable
         }
 
         var effectiveTimeout = timeout > 0 ? timeout : _options.DefaultTimeout;
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
         Exception? lastException = null;
         var maxRetry = Math.Max(1, servers.Count);
@@ -313,7 +314,9 @@ public abstract class NacosHttpClientBase : IDisposable
         string? contentType = null;
         if (content != null)
         {
-            contentBytes = await content.ReadAsByteArrayAsync(cancellationToken);
+            try { contentBytes = await content.ReadAsByteArrayAsync(linkedCts.Token); }
+            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested && timeoutCts.IsCancellationRequested)
+            { throw new NacosException(NacosException.ServerError, "Request timeout", ex); }
             contentType = content.Headers.ContentType?.ToString();
         }
 
@@ -322,8 +325,6 @@ public abstract class NacosHttpClientBase : IDisposable
             var server = _serverListManager.GetNextServer();
             var baseUrl = BuildBaseUrl(server);
 
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(effectiveTimeout));
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             try
             {
@@ -332,7 +333,7 @@ public abstract class NacosHttpClientBase : IDisposable
 
                 using var request = new HttpRequestMessage(method, url);
 
-                await AddAuthHeadersAsync(request, cancellationToken);
+                await AddAuthHeadersAsync(request, linkedCts.Token);
 
                 if (contentBytes != null && (method == HttpMethod.Post || method == HttpMethod.Put))
                 {
@@ -352,7 +353,7 @@ public abstract class NacosHttpClientBase : IDisposable
                 }
 
                 using var response = await _httpClient.SendAsync(request, linkedCts.Token);
-                var body = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                var body = await response.Content.ReadAsByteArrayAsync(linkedCts.Token);
 
                 if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotModified)
                 {
@@ -397,6 +398,7 @@ public abstract class NacosHttpClientBase : IDisposable
                 _serverListManager.MarkServerUnhealthy(server);
                 lastException = new NacosException(NacosException.ServerError, "Request timeout");
                 _logger?.LogWarning("Request to {Server} timed out after {Timeout}ms", server, effectiveTimeout);
+                throw lastException;
             }
             catch (HttpRequestException ex)
             {

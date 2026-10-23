@@ -30,7 +30,7 @@ internal class NamingServiceInfoHolder
         _logger = logger;
         _cacheDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "nacos", "naming", options.Namespace ?? "public");
+            "nacos", "naming", "v2", RedNb.Nacos.Utils.CacheIdentity.ForNaming(options));
 
         if (!Directory.Exists(_cacheDir))
         {

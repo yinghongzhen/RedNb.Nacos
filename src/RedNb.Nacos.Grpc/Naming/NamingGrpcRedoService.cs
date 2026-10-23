@@ -127,6 +127,9 @@ internal class NamingGrpcRedoService : IAsyncDisposable
         return _subscribedServices.Values;
     }
 
+    public bool IsSubscribed(string serviceName, string groupName, string? clusters) =>
+        _subscribedServices.ContainsKey(GetSubscribeKey(serviceName, groupName, clusters));
+
     #endregion
 
     #region Redo Execution

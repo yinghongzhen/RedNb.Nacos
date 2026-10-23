@@ -152,13 +152,11 @@ public class LocalConfigCache
 
     private string GetSnapshotPath(string dataId, string group)
     {
-        var fileName = $"{NacosUtils.UrlEncode(group)}_{NacosUtils.UrlEncode(dataId)}";
-        return Path.Combine(_cacheDir, "snapshot", fileName);
+        return Path.Combine(_cacheDir, "snapshot", "v2", CacheIdentity.HashParts(group, dataId));
     }
 
     private string GetFailoverPath(string dataId, string group)
     {
-        var fileName = $"{NacosUtils.UrlEncode(group)}_{NacosUtils.UrlEncode(dataId)}";
-        return Path.Combine(_cacheDir, "failover", fileName);
+        return Path.Combine(_cacheDir, "failover", "v2", CacheIdentity.HashParts(group, dataId));
     }
 }

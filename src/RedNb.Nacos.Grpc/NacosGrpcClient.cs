@@ -206,17 +206,8 @@ public class NacosGrpcClient : IAsyncDisposable
                 // Create channel with options
                 generation.Channel = GrpcChannel.ForAddress(address, new GrpcChannelOptions
                 {
-                    HttpHandler = new SocketsHttpHandler
-                    {
-                        // The bi-stream carries the ConnectionSetup that registers
-                        // this client, so every unary request must travel over the
-                        // very same HTTP/2 connection. A second connection would be
-                        // unregistered and answer "Invalid connection Id".
-                        EnableMultipleHttp2Connections = false,
-                        KeepAlivePingDelay = TimeSpan.FromSeconds(60),
-                        KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
-                        ConnectTimeout = TimeSpan.FromMilliseconds(ConnectionTimeoutMs)
-                    }
+                    HttpHandler = RedNb.Nacos.Utils.NacosTransport.CreateHandler(_options, grpc: true),
+                    DisposeHttpClient = true
                 });
 
                 generation.StreamClient = new BiRequestStream.BiRequestStreamClient(generation.Channel);

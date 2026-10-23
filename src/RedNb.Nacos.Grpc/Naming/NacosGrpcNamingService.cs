@@ -222,8 +222,8 @@ public class NacosGrpcNamingService : INamingService
             await DeregisterInstanceAsync(serviceName, groupName, instance, cancellationToken);
         }
 
-        // Remove from redo cache
-        _redoService.RemoveBatchRegisteredInstances(serviceName, groupName);
+        // Each successful single deregistration removes only its own redo entry.
+        // A partial batch (or an empty batch) must preserve remaining instances.
     }
 
     #endregion
@@ -369,7 +369,7 @@ public class NacosGrpcNamingService : INamingService
             // Try cache first
             serviceInfo = _serviceInfoHolder.GetServiceInfo(serviceName, groupName, clusterString);
 
-            if (serviceInfo == null)
+            if (serviceInfo == null || !_redoService.IsSubscribed(serviceName, groupName, clusterString))
             {
                 // Subscribe to get service info
                 serviceInfo = await _transportClient.SubscribeServiceAsync(

@@ -117,17 +117,17 @@ public class NacosClientOptions
     public bool EnableTls { get; set; } = false;
 
     /// <summary>
-    /// TLS certificate path.
+    /// PEM client certificate (optionally including its chain). Requires TlsKeyPath.
     /// </summary>
     public string? TlsCertPath { get; set; }
 
     /// <summary>
-    /// TLS key path.
+    /// Unencrypted PEM client private key. Requires TlsCertPath.
     /// </summary>
     public string? TlsKeyPath { get; set; }
 
     /// <summary>
-    /// TLS CA certificate path.
+    /// PEM CA bundle used as custom trust roots. Hostname, validity and chain checks remain enabled.
     /// </summary>
     public string? TlsCaPath { get; set; }
 
@@ -239,6 +239,8 @@ public class NacosClientOptions
     /// </summary>
     public void Validate()
     {
+        if (string.IsNullOrWhiteSpace(TlsCertPath) != string.IsNullOrWhiteSpace(TlsKeyPath))
+            throw new NacosException(NacosException.InvalidParam, "TlsCertPath and TlsKeyPath must be supplied together as PEM files.");
         var hasCore = !string.IsNullOrWhiteSpace(ServerAddresses);
         var hasConsole = !string.IsNullOrWhiteSpace(ConsoleAddresses);
         var hasEndpoint = !string.IsNullOrWhiteSpace(Endpoint);

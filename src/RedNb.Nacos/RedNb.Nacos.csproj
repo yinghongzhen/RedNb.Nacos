@@ -2,6 +2,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="RedNb.Nacos.Http" />
     <InternalsVisibleTo Include="RedNb.Nacos.Grpc" />
+    <InternalsVisibleTo Include="RedNb.Nacos.AspNetCore" />
     <InternalsVisibleTo Include="RedNb.Nacos.Tests" />
     <InternalsVisibleTo Include="RedNb.Nacos.Sample.Aot" />
   </ItemGroup>

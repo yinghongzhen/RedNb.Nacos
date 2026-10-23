@@ -14,11 +14,14 @@ public class NacosConfigurationProvider : ConfigurationProvider, IDisposable
 {
     private readonly NacosConfigurationSource _source;
     private readonly IConfigService _configService;
-    private readonly Dictionary<string, ConfigChangeListener> _listeners = new();
+    private readonly Dictionary<(string DataId, string Group), ConfigChangeListener> _listeners = new();
     private readonly ILogger? _logger;
     private bool _disposed;
+    private bool _loaded;
+    private readonly object _loadLock = new();
+    private readonly Dictionary<(string DataId, string Group), long> _revisions = new();
     private readonly object _dataLock = new();
-    private readonly Dictionary<string, Dictionary<string, string?>> _sourceData = new();
+    private readonly Dictionary<(string DataId, string Group), Dictionary<string, string?>> _sourceData = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NacosConfigurationProvider"/> class.
@@ -35,47 +38,67 @@ public class NacosConfigurationProvider : ConfigurationProvider, IDisposable
     /// <inheritdoc />
     public override void Load()
     {
-        LoadAsync().GetAwaiter().GetResult();
+        lock (_loadLock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var previousListeners = _listeners.Keys.ToHashSet();
+            try { LoadAsync().GetAwaiter().GetResult(); _loaded = true; }
+            catch
+            {
+                if (!_loaded)
+                {
+                    try { Dispose(); }
+                    catch (Exception ex) { _logger?.LogWarning(ex, "Failed to dispose configuration client after initialization failure"); }
+                }
+                else
+                    foreach (var key in _listeners.Keys.Except(previousListeners).ToArray())
+                    {
+                        try { _configService.RemoveListener(key.DataId, key.Group, _listeners[key]); }
+                        catch (Exception ex) { _logger?.LogWarning(ex, "Failed to remove listener after failed reload"); }
+                        _listeners.Remove(key);
+                    }
+                throw;
+            }
+        }
     }
 
     private async Task LoadAsync()
     {
-        var data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-
+        // Stage all sources. A failed required source must not partly overwrite the last good snapshot.
+        var pending = new Dictionary<(string DataId, string Group), (Dictionary<string, string?> Data, long Revision)>();
         foreach (var item in _source.ConfigItems)
         {
+            var key = (item.DataId, item.Group);
+            long revision;
+            lock (_dataLock) revision = _revisions.GetValueOrDefault(key);
             try
             {
-                var config = await _configService.GetConfigAsync(item.DataId, item.Group, _source.Options.DefaultTimeout);
-
+                var config = await _configService.GetConfigAsync(item.DataId, item.Group, _source.Options.DefaultTimeout).ConfigureAwait(false);
+                var itemData = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
                 if (string.IsNullOrEmpty(config))
                 {
                     if (!item.Optional && !_source.Optional)
-                    {
-                        throw new InvalidOperationException(
-                            $"Configuration not found: DataId={item.DataId}, Group={item.Group}");
-                    }
-                    continue;
+                        throw new InvalidOperationException($"Configuration not found: DataId={item.DataId}, Group={item.Group}");
                 }
+                else ParseConfiguration(itemData, config, item.ConfigType);
 
-                var itemData = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-                ParseConfiguration(itemData, config, item.ConfigType);
-                lock (_dataLock) _sourceData[$"{item.DataId}@@{item.Group}"] = itemData;
-
-                // Setup listener for reload if enabled
-                if (_source.ReloadOnChange)
-                {
-                    await SetupListenerAsync(item);
-                }
+                // Listen even for an absent optional item so that later creation can be observed.
+                if (_source.ReloadOnChange) await SetupListenerAsync(item).ConfigureAwait(false);
+                pending[key] = (itemData, revision);
             }
             catch (Exception ex) when (item.Optional || _source.Optional)
             {
-                _logger?.LogWarning(ex, "Failed to load optional configuration: DataId={DataId}, Group={Group}",
-                    item.DataId, item.Group);
+                // A fetch/parse error preserves the last good value. A confirmed absence stages an empty source.
+                _logger?.LogWarning(ex, "Failed to load optional configuration: DataId={DataId}, Group={Group}", item.DataId, item.Group);
             }
         }
-
-        RebuildData();
+        lock (_dataLock)
+        {
+            foreach (var entry in pending)
+                if (_revisions.GetValueOrDefault(entry.Key) == entry.Value.Revision)
+                    _sourceData[entry.Key] = entry.Value.Data;
+            RebuildData();
+        }
     }
 
     private void ParseConfiguration(Dictionary<string, string?> data, string content, string configType)
@@ -98,15 +121,8 @@ public class NacosConfigurationProvider : ConfigurationProvider, IDisposable
 
     private void ParseJsonConfiguration(Dictionary<string, string?> data, string json)
     {
-        try
-        {
-            using var doc = JsonDocument.Parse(json);
-            ParseJsonElement(data, doc.RootElement, string.Empty);
-        }
-        catch (JsonException ex)
-        {
-            _logger?.LogWarning(ex, "Failed to parse JSON configuration");
-        }
+        using var doc = JsonDocument.Parse(json);
+        ParseJsonElement(data, doc.RootElement, string.Empty);
     }
 
     private void ParseJsonElement(Dictionary<string, string?> data, JsonElement element, string prefix)
@@ -157,55 +173,54 @@ public class NacosConfigurationProvider : ConfigurationProvider, IDisposable
 
     private async Task SetupListenerAsync(NacosConfigurationItem item)
     {
-        var key = $"{item.DataId}@@{item.Group}";
+        var key = (item.DataId, item.Group);
         if (_listeners.ContainsKey(key))
             return;
 
         var listener = new ConfigChangeListener(item.ConfigType, newConfig =>
         {
             var data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            if (newConfig != null) ParseConfiguration(data, newConfig, item.ConfigType);
+            try { if (newConfig != null) ParseConfiguration(data, newConfig, item.ConfigType); }
+            catch (JsonException ex)
+            {
+                _logger?.LogWarning(ex, "Rejected invalid configuration update: DataId={DataId}, Group={Group}", item.DataId, item.Group);
+                return;
+            }
             lock (_dataLock)
             {
                 if (_disposed) return;
                 _sourceData[key] = data;
+                _revisions[key] = _revisions.GetValueOrDefault(key) + 1;
                 RebuildData();
             }
 
             OnReload();
         });
 
-        await _configService.AddListenerAsync(item.DataId, item.Group, listener);
         _listeners[key] = listener;
+        await _configService.AddListenerAsync(item.DataId, item.Group, listener).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_disposed)
-            return;
-
-        foreach (var kvp in _listeners)
+        lock (_loadLock)
         {
-            var parts = kvp.Key.Split("@@");
-            if (parts.Length == 2)
+            lock (_dataLock)
             {
-                _configService.RemoveListener(parts[0], parts[1], kvp.Value);
+                if (_disposed) return;
+                _disposed = true;
             }
+            foreach (var entry in _listeners)
+            {
+                try { _configService.RemoveListener(entry.Key.DataId, entry.Key.Group, entry.Value); }
+                catch (Exception ex) { _logger?.LogWarning(ex, "Failed to remove configuration listener during disposal"); }
+            }
+            _listeners.Clear();
+            if (_configService is IAsyncDisposable asyncDisposable)
+                asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            else if (_configService is IDisposable disposable) disposable.Dispose();
         }
-
-        _listeners.Clear();
-
-        if (_configService is IAsyncDisposable asyncDisposable)
-        {
-            asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-        else if (_configService is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-
-        _disposed = true;
     }
 
     private class ConfigChangeListener : IConfigChangeListener
@@ -231,7 +246,7 @@ public class NacosConfigurationProvider : ConfigurationProvider, IDisposable
         {
             var merged = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             foreach (var item in _source.ConfigItems)
-                if (_sourceData.TryGetValue($"{item.DataId}@@{item.Group}", out var values))
+                if (_sourceData.TryGetValue((item.DataId, item.Group), out var values))
                     foreach (var pair in values) merged[pair.Key] = pair.Value;
             Data = merged;
         }

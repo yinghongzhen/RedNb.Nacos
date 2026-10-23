@@ -13,8 +13,8 @@ public class NacosHealthCheckTests
     [Theory]
     [InlineData(false, 200, HealthStatus.Healthy)]
     [InlineData(true, 200, HealthStatus.Healthy)]
-    [InlineData(false, 503, HealthStatus.Degraded)]
-    [InlineData(true, 503, HealthStatus.Degraded)]
+    [InlineData(false, 503, HealthStatus.Unhealthy)]
+    [InlineData(true, 503, HealthStatus.Unhealthy)]
     public async Task HttpBranchRequestsConfiguredConsole(bool includeScheme, int status, HealthStatus expected)
     {
         using var server = TestHttpServer.Start();
