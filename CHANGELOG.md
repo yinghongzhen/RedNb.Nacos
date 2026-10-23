@@ -1,6 +1,8 @@
 # Changelog
 
-## 2.3.0（待发布）
+## 2.3.0（2026-10-23）
+
+[GitHub Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.3.0) 已发布，六包可信推送成功。完整套件 1638 次通过，Windows 两框架另各 50 次专项通过，13 项 CI 全部成功；完整证据见[验收报告](docs/RELEASE_2.3.0.md)。
 
 - #10：健康检查支持 Config/Naming 状态、Server/Console 独立节点探测、Any/All、完整诊断、取消、并发及总时限；DI 使用可定制的命名 HttpClient 管道，直接构造支持外部客户端所有权。
 - #11–#14：恢复缓存命中后的 Naming 订阅、保留部分注销后的 redo、按集群隔离 Naming 磁盘缓存，修复 HTTP snapshot/failover 的键碰撞。

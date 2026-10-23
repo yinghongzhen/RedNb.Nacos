@@ -34,5 +34,5 @@
 - 默认 AI pipeline 可能要求审核；本次仅对测试资源使用 ForcePublish。普通发布需要遵守服务器审批状态，SDK 不伪造审批成功。
 - AgentSpec 的主 Content 是 manifest；AGENTS.md 保存在 Resource 中。
 - Nacos 原生 mutex 没有 fencing token 和服务端持有者校验。SDK 本地租约检查不构成跨进程所有权保证，不自动重新获取失去的锁。
-- TLS、自定义反向代理、多节点集群故障切换、极端并发压力及所有 AI 可选管理操作，不包含在本次实测认证范围。
+- 2.3.0 已验证受控回环 HTTPS、私有 CA、mTLS 及底层 HTTP/2 传输，见[验收报告](RELEASE_2.3.0.md)。完整 Nacos gRPC 私有 CA 组合部署、自定义反向代理、多节点生产集群故障切换、极端并发压力及所有 AI 可选管理操作，不包含在本次认证范围。
 - legacy 静态/具体 transport 工厂仍可用于显式选择通道；推荐 DI 默认入口或 NacosAiClient，避免将不支持能力误当成可用。

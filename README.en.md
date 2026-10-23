@@ -10,6 +10,8 @@ English | [简体中文](README.md)
 
 A .NET 8 / .NET 10 SDK targeting Nacos 3.2.4. Find the current stable version on [NuGet.org](https://www.nuget.org/packages/RedNb.Nacos.All/) and [GitHub Releases](https://github.com/yinghongzhen/RedNb.Nacos/releases/latest). SDK and server versions are numbered independently.
 
+**2.3.0 is released:** addresses issues #10–#19 across health checks, subscription recovery, cache isolation, configuration reloads, deadlines and PEM TLS/mTLS. The full 1,638-test suite and all 13 CI checks passed. See the [validation report](docs/RELEASE_2.3.0.md) and [cache migration/behavior guide](docs/HEALTH_TLS.md) before upgrading.
+
 **2.2.0 is released:** adds one-command Aspire samples and fixes duplicated schemes in HTTP health-check URLs. All 1,534 tests and 11 CI checks passed. See the [release and validation results](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.2.0).
 
 **2.1.1 maintenance update:** migrates the test infrastructure to xUnit.net v3. Public SDK APIs and runtime behavior are unchanged. All 1,500 tests and 11 CI checks passed; see the [migration report](docs/XUNIT_V3_MIGRATION.md).

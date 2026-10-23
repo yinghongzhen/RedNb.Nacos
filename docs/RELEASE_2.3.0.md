@@ -27,6 +27,18 @@
 
 `src` 下 HttpClient 创建点已逐一检查：HTTP 请求及认证由客户端生命周期持有；gRPC 由连接 generation 持有并随 channel 释放；周期性健康检查使用工厂管理的管道。原 2.2.0 的两次检查产生两条 TCP 连接，修复后的同一检查实例复用一条连接。
 
-远端 CI、发布提交、Release、NuGet 与下载内容校验完成后补入链接。未满足门槛前不关闭 issue。
+最终发布提交：`124c2a24bfe98de09fc3cb00a857b682ef491f94`。
+
+| 验证 | 结果 | 证据 |
+| --- | --- | --- |
+| Linux .NET 8/10 完整套件 | 1638 通过，0 失败、0 跳过；10 份 TRX | [CI 39893514654](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/39893514654) |
+| Windows .NET 8 专项 | 50 通过 | 同一 CI 的 windows-transport / net8.0 |
+| Windows .NET 10 专项 | 50 通过 | 同一 CI 的 windows-transport / net10.0 |
+| 禁用反射、原生 SDK/Web、包消费者及恢复 | 所有对应检查成功 | .NET 8/10 × Windows/Linux 矩阵 |
+| 总 CI 门槛 | 13/13 成功 | 同上；Windows 专项为重复执行的回归，不是额外 100 个不同用例 |
+| GitHub Release | v2.3.0 正式版，六个附件 | [Release](https://github.com/yinghongzhen/RedNb.Nacos/releases/tag/v2.3.0) |
+| NuGet 可信发布 | 六次推送成功 | [运行 39894565451](https://github.com/yinghongzhen/RedNb.Nacos/actions/runs/39894565451) |
+
+六包来源为 CI 的 `validation-results`（artifact ID `12475977406`）；包版本、内部依赖及源码提交一致，Release 附件 SHA-256 与 CI 产物逐项一致。已从 NuGet 公共地址重新下载六包，除仓库签名外，包内文件集合与字节内容均与 CI/Release 一致。#10–#19 已完成修复、测试和发布验收。构建仍有既有 XML 文档/xUnit 建议类警告，没有通过全局压制 AOT/裁剪警告放行。
 
 完整使用方法与缓存迁移要求见 [健康检查、TLS 与缓存迁移](HEALTH_TLS.md)。本轮不认证 ARM64、生产代理、完整 Nacos gRPC 私有 CA 组合部署、生产集群和外部 LLM。
